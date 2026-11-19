@@ -1,6 +1,3 @@
-/* Bangla typefaces — Noto Sans Bengali for body, Hind Siliguri for display headings. */
-@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,314 +6,206 @@
    BASE
 --------------------------------------------------------------------------- */
 :root {
-  color-scheme: dark;
-  --font-bangla-display: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
-}
-
-/* All headings use the friendlier rounded Bangla display face. */
-h1, h2, h3, h4 {
-  font-family: var(--font-bangla-display);
-  letter-spacing: -0.01em;
-}
-
-/* Animated, colourful gradient text */
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-
-.text-gradient-warm,
-.text-gradient-cool {
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: gradient-shift 7s linear infinite;
-}
-
-.text-gradient-warm {
-  background-image: linear-gradient(100deg, #fbbf24, #fb7185, #c084fc, #fbbf24);
-}
-.text-gradient-cool {
-  background-image: linear-gradient(100deg, #22d3ee, #818cf8, #e879f9, #22d3ee);
-}
-
-/* Soft marker highlight for a key Bangla word */
-.text-marker {
-  position: relative;
-  white-space: nowrap;
-}
-.text-marker::after {
-  content: '';
-  position: absolute;
-  left: -2px;
-  right: -2px;
-  bottom: 0.08em;
-  height: 0.28em;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(251,191,36,0.35), rgba(236,72,153,0.3));
-  z-index: -1;
+  color-scheme: light;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  @apply bg-navy-950 text-slate-100 antialiased;
-  background-image:
-    radial-gradient(60rem 60rem at 12% -10%, rgba(59, 130, 246, 0.18), transparent 55%),
-    radial-gradient(55rem 55rem at 92% 8%, rgba(168, 85, 247, 0.16), transparent 55%),
-    radial-gradient(45rem 45rem at 50% 100%, rgba(99, 102, 241, 0.12), transparent 60%);
-  background-attachment: fixed;
+  @apply bg-paper font-sans text-ink antialiased;
+  font-feature-settings: 'kern';
+}
+
+h1, h2, h3, h4 {
+  @apply font-display text-ink;
+  letter-spacing: -0.01em;
 }
 
 /* Offset anchor links so the sticky navbar doesn't cover section titles. */
 section[id] {
-  scroll-margin-top: 88px;
+  scroll-margin-top: 80px;
 }
 
 ::selection {
-  background: rgba(99, 102, 241, 0.45);
-  color: #fff;
+  background: #cfdcff;
+  color: #111418;
 }
 
 /* ---------------------------------------------------------------------------
-   ACCESSIBILITY + SCROLL REVEAL
+   ACCESSIBILITY
 --------------------------------------------------------------------------- */
-/* Skip link stays off-screen until keyboard-focused. */
 .skip-link {
   position: fixed;
   top: -100px;
   left: 12px;
   z-index: 100;
-  border-radius: 12px;
-  background: #4f46e5;
-  padding: 10px 18px;
+  border-radius: 10px;
+  background: #111418;
+  padding: 10px 16px;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   color: #fff;
   transition: top 0.2s ease;
 }
 .skip-link:focus {
   top: 12px;
-  outline: 3px solid #a5b4fc;
-  outline-offset: 2px;
 }
 
-/* Consistent, high-visibility focus ring for keyboard users. */
-:where(a, button, input, textarea, select, [tabindex]):focus-visible {
-  outline: 3px solid #a5b4fc;
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid #2f5bea;
   outline-offset: 3px;
+  border-radius: 6px;
 }
 
-/* Elements are only hidden when JS has confirmed reveal support. */
-.reveal-ready [data-reveal] {
+/* ---------------------------------------------------------------------------
+   SCROLL REVEAL — content is only hidden once JS confirms support.
+   [data-reveal] fades up; children of [data-stagger] follow one by one.
+--------------------------------------------------------------------------- */
+.reveal-ready [data-reveal],
+.reveal-ready [data-stagger] > * {
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transform: translateY(16px);
+  transition: opacity 0.6s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.reveal-ready [data-reveal].is-visible {
+.reveal-ready [data-stagger] > * {
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+.reveal-ready [data-reveal].is-visible,
+.reveal-ready [data-stagger].is-visible > * {
   opacity: 1;
   transform: none;
 }
+
+/* Hero entrance: a short, one-time sequence. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.rise {
+  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--d, 0) * 90ms);
+}
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.fade-in {
+  animation: fade 0.8s ease both;
+  animation-delay: calc(var(--d, 0) * 90ms);
+}
+
+/* A slow, live pulse for "happening now" dots. */
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 rgb(22 163 74 / 0.45); }
+  70% { box-shadow: 0 0 0 7px rgb(22 163 74 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(22 163 74 / 0); }
+}
+.live-dot {
+  @apply inline-block h-2 w-2 shrink-0 rounded-full bg-green-600;
+  animation: pulse-dot 2s ease-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .reveal-ready [data-reveal] {
+  html { scroll-behavior: auto; }
+  .reveal-ready [data-reveal],
+  .reveal-ready [data-stagger] > * {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
   }
-  html {
-    scroll-behavior: auto;
-  }
-}
-
-/* Faint perspective grid behind the hero, faded out towards the edges. */
-.hero-grid {
-  background-image:
-    linear-gradient(rgba(129, 140, 248, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(129, 140, 248, 0.07) 1px, transparent 1px);
-  background-size: 58px 58px;
-  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 28%, #000 25%, transparent 100%);
-  mask-image: radial-gradient(ellipse 75% 65% at 50% 28%, #000 25%, transparent 100%);
-}
-
-/* Ultra-thin gradient hairline used on the hero card. */
-.hero-hairline {
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(129, 140, 248, 0.55),
-    rgba(217, 70, 239, 0.4),
-    transparent
-  );
+  .rise, .fade-in, .live-dot { animation: none; }
 }
 
 /* ---------------------------------------------------------------------------
-   REUSABLE COMPONENT CLASSES
+   COMPONENTS
 --------------------------------------------------------------------------- */
 @layer components {
-  /* Frosted-glass card used throughout the site. */
+  .page {
+    @apply mx-auto w-full max-w-page px-4 sm:px-6 lg:px-8;
+  }
+
+  .section {
+    @apply py-20 sm:py-28;
+  }
+
+  .eyebrow {
+    @apply text-[13px] font-semibold text-brand;
+  }
+
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-card;
+  }
+
+  /* Old name kept so admin / utility pages share the same surface. */
   .glass {
-    @apply rounded-3xl border border-white/10 bg-white/[0.045] backdrop-blur-xl;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 50px -25px rgba(0, 0, 0, 0.8);
+    @apply rounded-2xl border border-line bg-surface shadow-card;
   }
 
-  .glass-strong {
-    @apply rounded-2xl border border-white/10 bg-navy-900/80 backdrop-blur-xl;
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 py-3 text-[15px] font-semibold
+           transition duration-200 disabled:cursor-not-allowed disabled:opacity-50;
   }
-
-  /* Gradient text for headlines. */
-  .gradient-text {
-    @apply bg-accent-gradient bg-clip-text text-transparent;
-    background-size: 200% auto;
-    animation: gradient-shift 8s linear infinite;
-  }
-
-  /* Primary call-to-action button. */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-accent-gradient px-6 py-3
-           text-sm font-bold text-white shadow-glow-blue transition
-           hover:-translate-y-0.5 hover:shadow-glow focus:outline-none focus:ring-2
-           focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-navy-950
-           disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0;
+    @apply btn bg-ink text-white hover:bg-[#262b33] active:scale-[0.98];
   }
-
-  /* Secondary / outline button. */
+  .btn-brand {
+    @apply btn bg-brand text-white hover:bg-brand-ink active:scale-[0.98];
+  }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/15
-           bg-white/5 px-6 py-3 text-sm font-bold text-slate-100 backdrop-blur transition
-           hover:-translate-y-0.5 hover:border-indigo-400/60 hover:bg-white/10
-           focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2
-           focus:ring-offset-navy-950;
+    @apply btn border border-line-strong bg-surface text-ink hover:border-ink-3 active:scale-[0.98];
   }
 
-  /* Small pill badge (Hero, badges). */
-  .badge {
-    @apply inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5
-           px-3.5 py-1.5 text-xs font-semibold text-slate-200 backdrop-blur;
+  .link {
+    @apply font-semibold text-brand underline decoration-brand/30 underline-offset-4 transition hover:decoration-brand;
   }
 
-  /* Form field label. */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-[13px] font-medium text-ink-2;
+  }
+
   .field-label {
-    @apply mb-1.5 block text-sm font-semibold text-slate-200;
+    @apply mb-1.5 block text-sm font-semibold text-ink;
   }
-
-  /* Form input / textarea / select. */
+  .field-hint {
+    @apply mt-1.5 text-xs text-ink-3;
+  }
   .field-input {
-    @apply w-full rounded-xl border border-white/10 bg-navy-950/60 px-4 py-3 text-sm
-           text-white placeholder:text-slate-500 outline-none transition
-           focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/30;
+    @apply w-full rounded-xl border border-line-strong bg-surface px-4 py-3 text-[15px] text-ink
+           placeholder:text-ink-4 outline-none transition
+           hover:border-ink-4 focus:border-brand focus:ring-4 focus:ring-brand/10;
   }
-
+  .field-input[aria-invalid='true'] {
+    @apply border-red-500 focus:ring-red-500/10;
+  }
   .field-error {
-    @apply mt-1.5 flex items-center gap-1.5 text-xs font-medium text-rose-400;
+    @apply mt-1.5 flex items-center gap-1.5 text-[13px] font-medium text-red-600;
   }
-}
-
-/* ---------------------------------------------------------------------------
-   SCROLLBAR (subtle, dark)
---------------------------------------------------------------------------- */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: #050a1f;
-}
-::-webkit-scrollbar-thumb {
-  background: #2a3560;
-  border-radius: 999px;
-  border: 2px solid #050a1f;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #4f5bb0;
 }
 
 /* ---------------------------------------------------------------------------
    PRINT — used by the /rulebook "Print / Save as PDF" button
 --------------------------------------------------------------------------- */
 @media print {
-  @page {
-    margin: 16mm;
-  }
-
-  html,
-  body {
-    background: #ffffff !important;
-    color: #111827 !important;
-    background-image: none !important;
-  }
-
-  .no-print {
-    display: none !important;
-  }
-
-  /* Rulebook content becomes a clean black-on-white document. */
+  @page { margin: 16mm; }
+  html, body { background: #fff !important; color: #111418 !important; }
+  .no-print { display: none !important; }
   .print-document {
-    background: #ffffff !important;
-    color: #111827 !important;
+    background: #fff !important;
     box-shadow: none !important;
     border: none !important;
     max-width: none !important;
     padding: 0 !important;
   }
-
-  .print-document * {
-    color: #111827 !important;
-    border-color: #d1d5db !important;
-  }
-
-  .print-document a {
-    color: #1d4ed8 !important;
-    text-decoration: underline;
-  }
-
-  .print-document section {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .print-document h2 {
-    break-after: avoid;
-    page-break-after: avoid;
-  }
-
-  /* Competitor ID card keeps its structure but prints cleanly in black & white. */
+  .print-document a { color: #1d4ed8 !important; text-decoration: underline; }
+  .print-document section { break-inside: avoid; page-break-inside: avoid; }
+  .print-document h2 { break-after: avoid; page-break-after: avoid; }
   .id-card {
-    background: #ffffff !important;
-    border: 1px solid #94a3b8 !important;
     box-shadow: none !important;
-    color: #111827 !important;
     break-inside: avoid;
     page-break-inside: avoid;
-  }
-
-  .id-card * {
-    color: #111827 !important;
-  }
-
-  .id-card-header {
-    background: #f1f5f9 !important;
-    border-bottom: 1px solid #94a3b8 !important;
-  }
-
-  .id-card-accent {
-    background: #111827 !important;
-  }
-
-  .id-card-footer {
-    border-top: 1px solid #94a3b8 !important;
-  }
-
-  .id-card-label {
-    color: #475569 !important;
-  }
-
-  /* Make the white wordmark legible on the white printed card. */
-  .id-card img {
-    filter: brightness(0);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 
@@ -329,4 +218,51 @@ section[id] {
   overflow: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+/* Score bars grow once their list scrolls into view. */
+.reveal-ready [data-reveal] .grow-x {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 80ms + 150ms);
+}
+.reveal-ready [data-reveal].is-visible .grow-x {
+  transform: scaleX(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-ready [data-reveal] .grow-x { transform: none !important; transition: none !important; }
+}
+
+/* FAQ answers ease in when opened. */
+details[open] .faq-answer {
+  animation: rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Pointer tilt for the ID card on the home page. */
+.tilt-inner {
+  position: relative;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: transform;
+}
+.tilt-inner[data-active] {
+  transition-duration: 0.12s;
+}
+.tilt-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  pointer-events: none;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgb(255 255 255 / 0.14), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.tilt-inner[data-active]::after {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tilt-inner { transform: none !important; }
+  .tilt-inner::after { display: none; }
 }

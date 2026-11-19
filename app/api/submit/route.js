@@ -9,6 +9,7 @@
 import nodemailer from 'nodemailer';
 import { event, isSubmissionOpen } from '@/lib/config';
 import { isApprovalToken, verifyToken } from '@/lib/admin';
+import { layout, details, p, signoff } from '@/lib/email';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -73,52 +74,39 @@ function validate(data) {
   return errors;
 }
 
-function row(label, value) {
-  return `<tr>
-    <td style="padding:8px 0;color:#475569;font-weight:600;width:170px;vertical-align:top;">${label}</td>
-    <td style="padding:8px 0;vertical-align:top;white-space:pre-wrap;word-break:break-all;">${value}</td>
-  </tr>`;
-}
+const link = (url) => `<a href="${esc(url)}" style="color:#2f5bea;">${esc(url)}</a>`;
+const PLATFORM = { github: 'GitHub + Vercel', lovable: 'Lovable', v0: 'v0 (Vercel)' };
 
 function organizerEmail(d) {
-  return `
-  <div style="font-family:'Noto Sans Bengali',Arial,sans-serif;max-width:680px;margin:auto;color:#0f172a;">
-    <div style="background:linear-gradient(135deg,#3b82f6,#6366f1,#a855f7);padding:22px 26px;border-radius:14px 14px 0 0;">
-      <h1 style="color:#fff;margin:0;font-size:22px;">নতুন প্রোডাক্ট জমা দেওয়া হয়েছে 🚀</h1>
-      <p style="color:#e0e7ff;margin:6px 0 0;font-size:14px;">${esc(event.name)} — Final Submission</p>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:24px 26px;">
-      <table style="width:100%;border-collapse:collapse;font-size:15px;">
-        ${row('নাম / টিম', esc(d.name))}
-        ${row('প্রোডাক্ট', esc(d.productName))}
-        ${row('ইমেইল', esc(d.email))}
-        ${row('প্ল্যাটফর্ম', esc(d.platform))}
-        ${d.githubUrl ? row('GitHub', `<a href="${esc(d.githubUrl)}">${esc(d.githubUrl)}</a>`) : ''}
-        ${row('Live link', `<a href="${esc(d.liveUrl)}">${esc(d.liveUrl)}</a>`)}
-        ${row('ডেমো ভিডিও', d.demoUrl ? `<a href="${esc(d.demoUrl)}">${esc(d.demoUrl)}</a>` : '—')}
-        ${row('AI টুল ব্যবহার', esc(d.aiTools))}
-        ${d.platform === 'github' ? row('README', d.readme ? 'যোগ করা হয়েছে' : 'না') : ''}
-        ${row('মোট সময়', esc(d.timeSpent) || '—')}
-      </table>
-    </div>
-  </div>`;
+  return layout({
+    preheader: `${d.productName} — ${d.name}`,
+    eyebrow: 'নতুন প্রোডাক্ট জমা',
+    title: esc(d.productName),
+    body: details([
+      ['নাম / টিম', esc(d.name)],
+      ['ইমেইল', esc(d.email)],
+      ['প্ল্যাটফর্ম', PLATFORM[d.platform] || esc(d.platform)],
+      ['লাইভ লিংক', link(d.liveUrl)],
+      d.githubUrl && ['GitHub', link(d.githubUrl)],
+      ['ডেমো ভিডিও', d.demoUrl ? link(d.demoUrl) : ''],
+      ['AI টুল ব্যবহার', esc(d.aiTools)],
+      d.platform === 'github' && ['README', d.readme ? 'যোগ করা হয়েছে' : 'না'],
+      ['মোট সময়', esc(d.timeSpent)],
+    ]),
+    footnote: 'এই ইমেইলে Reply করলে সরাসরি প্রতিযোগীর কাছে যাবে।',
+  });
 }
 
-function confirmationEmail(name) {
-  return `
-  <div style="font-family:'Noto Sans Bengali',Arial,sans-serif;max-width:600px;margin:auto;color:#0f172a;">
-    <div style="background:linear-gradient(135deg,#3b82f6,#6366f1,#a855f7);padding:22px 26px;border-radius:14px 14px 0 0;">
-      <h1 style="color:#fff;margin:0;font-size:22px;">${esc(event.name)}</h1>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:26px;">
-      <p style="font-size:16px;">অভিনন্দন, ${esc(name)}! 🎉</p>
-      <p style="font-size:16px;line-height:1.8;">
-        আপনার প্রোডাক্ট সফলভাবে জমা দেওয়া হয়েছে। বিচারকমণ্ডলী ২৮ নভেম্বর প্রোডাক্টগুলো যাচাই করবে এবং
-        সন্ধ্যায় ফলাফল ঘোষণা করা হবে।
-      </p>
-      <p style="font-size:14px;color:#64748b;margin-top:24px;">— ${esc(event.organizer)} আয়োজক কমিটি</p>
-    </div>
-  </div>`;
+function confirmationEmail(d) {
+  return layout({
+    preheader: 'আপনার প্রোডাক্ট জমা হয়েছে। ২৮ নভেম্বর সন্ধ্যায় ফলাফল।',
+    eyebrow: 'জমা দেওয়া হয়েছে',
+    title: `অভিনন্দন, ${esc(d.name)}`,
+    body:
+      p(`<strong>${esc(d.productName)}</strong> সফলভাবে জমা দেওয়া হয়েছে। লাইভ লিংক: ${link(d.liveUrl)}`) +
+      p('বিচারকমণ্ডলী ২৮ নভেম্বর প্রোডাক্টগুলো যাচাই করবে, আর সন্ধ্যায় ফলাফল ঘোষণা করা হবে। ১২ ঘণ্টা ধরে বানানোর জন্য ধন্যবাদ।') +
+      signoff(),
+  });
 }
 
 export async function POST(req) {
@@ -214,7 +202,7 @@ export async function POST(req) {
         from: `"${event.shortName}" <${GMAIL_USER}>`,
         to: data.email,
         subject: 'আপনার প্রোডাক্ট জমা দেওয়া হয়েছে',
-        html: confirmationEmail(data.name),
+        html: confirmationEmail(data),
       });
     } catch (error) {
       console.warn('Submission confirmation failed (submission still saved):', error.message);

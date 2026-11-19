@@ -7,30 +7,22 @@ import nodemailer from 'nodemailer';
 import { getCookieValue, isAdminSession } from '@/lib/admin';
 import { clearRecordsCache } from '@/lib/gmail-store';
 import { event, socialLinks } from '@/lib/config';
+import { layout, button, highlight, p, signoff, esc, bn } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
-function esc(value) {
-  return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 function resultEmail(name, place, product, marks, rank) {
-  return `
-  <div style="font-family:'Noto Sans Bengali',Arial,sans-serif;max-width:620px;margin:auto;color:#0f172a;">
-    <div style="background:linear-gradient(135deg,#3b82f6,#6366f1,#a855f7);padding:22px 26px;border-radius:14px 14px 0 0;">
-      <h1 style="color:#fff;margin:0;font-size:22px;">ফলাফল ঘোষণা 🎉</h1>
-      <p style="color:#e0e7ff;margin:6px 0 0;font-size:14px;">${esc(event.name)}</p>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:26px;">
-      <p style="font-size:16px;">অভিনন্দন, ${esc(name)}!</p>
-      <p style="font-size:15px;line-height:1.8;color:#475569;">
-        আপনি <strong>${esc(product)}</strong> প্রোডাক্টের জন্য <strong>${esc(place)} স্থান</strong> অর্জন করেছেন${marks != null ? ` — <strong>${esc(marks)} / 100</strong> নম্বরসহ` : ''}।
-      </p>
-      ${rank <= 3 ? '<p style="line-height:1.8;color:#475569;">আপনার পুরস্কার (Book) সম্পর্কে আয়োজক কমিটি শীঘ্রই যোগাযোগ করবে।</p>' : ''}
-      <p style="font-size:13px;color:#64748b;margin-top:24px;">সম্পূর্ণ ফলাফল: <a href="${socialLinks.siteUrl}/results">${socialLinks.siteUrl}/results</a></p>
-      <p style="font-size:14px;color:#64748b;">— ${esc(event.organizer)} আয়োজক কমিটি</p>
-    </div>
-  </div>`;
+  return layout({
+    preheader: `${place} — ${event.name}`,
+    eyebrow: 'ফলাফল ঘোষণা',
+    title: `অভিনন্দন, ${esc(name)}`,
+    body:
+      p(`<strong>${esc(product)}</strong> প্রোডাক্টের জন্য আপনি এই স্থান অর্জন করেছেন:`) +
+      highlight(marks != null ? `${bn(esc(marks))} / ১০০ নম্বর` : 'অর্জিত স্থান', esc(place)) +
+      (rank <= 3 ? p('আপনার পুরস্কার (বই) পৌঁছে দেওয়ার বিষয়ে আয়োজক কমিটি শীঘ্রই যোগাযোগ করবে।') : '') +
+      button('সম্পূর্ণ ফলাফল দেখুন', `${socialLinks.siteUrl}/results`) +
+      signoff(),
+  });
 }
 
 export async function POST(req) {

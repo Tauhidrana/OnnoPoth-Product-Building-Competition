@@ -12,8 +12,9 @@
  */
 
 import nodemailer from 'nodemailer';
-import { isRegistrationOpen, event } from '@/lib/config';
+import { isRegistrationOpen, event, socialLinks } from '@/lib/config';
 import { eventIcs } from '@/lib/calendar';
+import { layout, details, steps, button, p, signoff } from '@/lib/email';
 
 // Force the Node.js runtime (Nodemailer needs Node APIs, not Edge).
 export const runtime = 'nodejs';
@@ -113,84 +114,46 @@ function validate(data) {
 
 // --- Email templates --------------------------------------------------------
 function buildOrganizerEmail(d, leaderName, isTeam) {
-  const membersHtml = isTeam
-    ? `<tr>
-         <td style="padding:8px 0;color:#475569;font-weight:600;">টিমের সদস্য</td>
-         <td style="padding:8px 0;">${(d.members || [])
-           .map(clean)
-           .filter(Boolean)
-           .map((m, i) => `${i + 1}. ${esc(m)}`)
-           .join('<br/>')}</td>
-       </tr>
-       <tr>
-         <td style="padding:8px 0;color:#475569;font-weight:600;">টিম লিডার</td>
-         <td style="padding:8px 0;">${esc(leaderName)}</td>
-       </tr>`
-    : '';
-
-  const teamNameHtml = isTeam
-    ? `<tr>
-         <td style="padding:8px 0;color:#475569;font-weight:600;">টিমের নাম</td>
-         <td style="padding:8px 0;">${esc(d.teamName) || '—'}</td>
-       </tr>`
-    : '';
-
-  const row = (label, value) => `
-    <tr>
-      <td style="padding:8px 0;color:#475569;font-weight:600;width:170px;vertical-align:top;">${label}</td>
-      <td style="padding:8px 0;vertical-align:top;white-space:pre-wrap;">${value}</td>
-    </tr>`;
-
-  return `
-  <div style="font-family:'Noto Sans Bengali',Arial,sans-serif;max-width:680px;margin:auto;color:#0f172a;">
-    <div style="background:linear-gradient(135deg,#3b82f6,#6366f1,#a855f7);padding:22px 26px;border-radius:14px 14px 0 0;">
-      <h1 style="color:#ffffff;margin:0;font-size:22px;">নতুন রেজিস্ট্রেশন 🎉</h1>
-      <p style="color:#e0e7ff;margin:6px 0 0;font-size:14px;">${esc(event.name)} — ${esc(event.organizer)}</p>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:24px 26px;">
-      <table style="width:100%;border-collapse:collapse;font-size:15px;">
-        ${row('ধরন', isTeam ? 'টিম' : 'একা (Solo)')}
-        ${row('নাম', esc(leaderName))}
-        ${teamNameHtml}
-        ${membersHtml}
-        ${row('প্রতিষ্ঠান', esc(d.institution))}
-        ${row('শ্রেণি/সেমিস্টার', esc(d.className))}
-        ${row('WhatsApp', esc(d.whatsapp))}
-        ${row('ইমেইল', esc(d.email))}
-        ${row('GitHub', esc(d.github))}
-        ${row('প্রোডাক্টের নাম', esc(d.productName))}
-        ${row('কোন সমস্যা সমাধান করবে', esc(d.problem))}
-        ${row('কারা ব্যবহার করবে', esc(d.users))}
-        ${row('প্রধান ৩–৫টি ফিচার', esc(d.features))}
-      </table>
-      <p style="margin-top:22px;font-size:12px;color:#94a3b8;">
-        Reply করলে participant-এর কাছে যাবে (replyTo সেট করা আছে)।
-      </p>
-    </div>
-  </div>`;
+  const members = (d.members || []).map(clean).filter(Boolean).map((m, i) => `${i + 1}. ${esc(m)}`).join('<br/>');
+  return layout({
+    preheader: `${d.productName} — ${leaderName}`,
+    eyebrow: 'নতুন রেজিস্ট্রেশন',
+    title: esc(d.productName),
+    body:
+      details([
+        ['ধরন', isTeam ? 'টিম' : 'একা'],
+        ['নাম', esc(leaderName)],
+        isTeam && ['টিমের নাম', esc(d.teamName)],
+        isTeam && ['টিমের সদস্য', members],
+        ['প্রতিষ্ঠান', esc(d.institution)],
+        ['শ্রেণি / সেমিস্টার', esc(d.className)],
+        ['WhatsApp', esc(d.whatsapp)],
+        ['ইমেইল', esc(d.email)],
+        ['GitHub', esc(d.github)],
+        ['কোন সমস্যা সমাধান করবে', esc(d.problem)],
+        ['কারা ব্যবহার করবে', esc(d.users)],
+        ['প্রধান ফিচার', esc(d.features)],
+      ]) + button('অ্যাডমিন প্যানেলে দেখুন', `${socialLinks.siteUrl}/admin`),
+    footnote: 'এই ইমেইলে Reply করলে সরাসরি প্রতিযোগীর কাছে যাবে।',
+  });
 }
 
-function buildConfirmationEmail(name) {
-  return `
-  <div style="font-family:'Noto Sans Bengali',Arial,sans-serif;max-width:600px;margin:auto;color:#0f172a;">
-    <div style="background:linear-gradient(135deg,#3b82f6,#6366f1,#a855f7);padding:22px 26px;border-radius:14px 14px 0 0;">
-      <h1 style="color:#ffffff;margin:0;font-size:22px;">${esc(event.name)}</h1>
-      <p style="color:#e0e7ff;margin:6px 0 0;font-size:14px;">${esc(event.organizer)} · ${esc(event.mode)}</p>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:26px;">
-      <p style="font-size:16px;">অভিনন্দন, ${esc(name)}! 👋</p>
-      <p style="font-size:16px;line-height:1.8;">
-        আপনার রেজিস্ট্রেশন গ্রহণ করা হয়েছে। ২৫ নভেম্বর কনফার্মড তালিকা ঘোষণা করা হবে।
-      </p>
-      <p style="font-size:15px;line-height:1.8;color:#475569;">
-        আগে থেকেই GitHub ও Vercel অ্যাকাউন্ট তৈরি করে রাখতে ভুলবেন না। কোড লেখা শুরু করতে হবে
-        ২৭ নভেম্বর সকাল ১০টার পরে। শুভেচ্ছা রইলো!
-      </p>
-      <p style="font-size:14px;color:#64748b;margin-top:24px;">
-        — ${esc(event.organizer)} আয়োজক কমিটি
-      </p>
-    </div>
-  </div>`;
+function buildConfirmationEmail(name, productName) {
+  return layout({
+    preheader: 'রেজিস্ট্রেশন গ্রহণ করা হয়েছে। ২৫ নভেম্বর কনফার্মড তালিকা ঘোষণা করা হবে।',
+    eyebrow: 'রেজিস্ট্রেশন গ্রহণ করা হয়েছে',
+    title: `ধন্যবাদ, ${esc(name)}`,
+    body:
+      p(`<strong>${esc(productName)}</strong> আইডিয়াসহ আপনার রেজিস্ট্রেশন আমরা পেয়েছি। এরপর যা হবে:`) +
+      steps([
+        ['২৪–২৫ নভেম্বর', 'আইডিয়া যাচাই ও কনফার্মড তালিকা'],
+        ['২৬ নভেম্বর', 'নিয়মাবলি ও ব্রিফিং'],
+        ['২৭ নভেম্বর, সকাল ১০টা – রাত ১০টা', '১২ ঘণ্টার মূল প্রতিযোগিতা'],
+      ]) +
+      p('আগে থেকেই GitHub ও Vercel অ্যাকাউন্ট খুলে রাখুন। কোড লেখা শুরু করতে হবে ২৭ নভেম্বর সকাল ১০টার পরে। ক্যালেন্ডারে যোগ করার ফাইল সংযুক্ত আছে।') +
+      button('স্ট্যাটাস দেখুন', `${socialLinks.siteUrl}/status`) +
+      signoff(),
+  });
 }
 
 // --- Route handler ----------------------------------------------------------
@@ -320,7 +283,7 @@ export async function POST(req) {
         from: `"${event.shortName}" <${GMAIL_USER}>`,
         to: data.email,
         subject: 'আপনার রেজিস্ট্রেশন গ্রহণ করা হয়েছে',
-        html: buildConfirmationEmail(leaderName),
+        html: buildConfirmationEmail(leaderName, data.productName),
         attachments: [
           {
             filename: 'onnopoth-competition.ics',

@@ -1,8 +1,13 @@
+import { Hind_Siliguri, Noto_Sans_Bengali } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ScrollReveal from '@/components/ScrollReveal';
 import { event, dates, socialLinks } from '@/lib/config';
+
+// Noto Sans Bengali for reading, Hind Siliguri for headings.
+const body = Noto_Sans_Bengali({ subsets: ['bengali', 'latin'], weight: ['400', '500', '600', '700'], variable: '--font-body', display: 'swap' });
+const display = Hind_Siliguri({ subsets: ['bengali', 'latin'], weight: ['500', '600', '700'], variable: '--font-display', display: 'swap' });
 
 /**
  * SEO + Open Graph metadata.
@@ -16,15 +21,7 @@ export const metadata = {
   },
   description:
     'AI-এর সাহায্যে আইডিয়াকে বাস্তব প্রোডাক্টে রূপ দাও। OnnoPoth আয়োজিত সম্পূর্ণ অনলাইন Product Building Competition — ২৭ নভেম্বর ২০২৬, ১২ ঘণ্টা।',
-  keywords: [
-    'OnnoPoth',
-    'Product Building Competition',
-    'AI competition Bangladesh',
-    'student competition',
-    'Vercel',
-    'GitHub',
-    'Bangla',
-  ],
+  keywords: ['OnnoPoth', 'Product Building Competition', 'AI competition Bangladesh', 'student competition', 'Vercel', 'GitHub', 'Bangla'],
   authors: [{ name: 'OnnoPoth' }],
   creator: event.organizer,
   applicationName: event.name,
@@ -35,14 +32,7 @@ export const metadata = {
     siteName: `${event.shortName} – ${event.organizer}`,
     title: `${event.name} | ${event.organizer}`,
     description: event.tagline,
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: `${event.name} – ${event.organizer}`,
-      },
-    ],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${event.name} – ${event.organizer}` }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -57,7 +47,7 @@ export const metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#050a1f',
+  themeColor: '#f6f5f1',
 };
 
 export default function RootLayout({ children }) {
@@ -83,12 +73,9 @@ export default function RootLayout({ children }) {
   };
 
   return (
-    <html lang="bn">
-      <body className="font-sans">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema) }}
-        />
+    <html lang="bn" className={`${body.variable} ${display.variable}`}>
+      <body>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema) }} />
         <a href="#main" className="skip-link">মূল কনটেন্টে যান</a>
         <Navbar />
         <main id="main">{children}</main>

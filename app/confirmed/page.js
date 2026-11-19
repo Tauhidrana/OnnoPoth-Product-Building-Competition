@@ -34,27 +34,27 @@ export default async function ConfirmedPage() {
 
         <div className="mt-12">
           {error ? (
-            <div className="glass p-10 text-center text-sm text-rose-200">{error}</div>
+            <div className="glass p-10 text-center text-sm text-red-700">{error}</div>
           ) : approved.length === 0 ? (
             <div className="glass p-12 text-center">
-              <Users className="mx-auto h-10 w-10 text-indigo-300" />
-              <p className="mt-4 text-lg font-bold text-white">তালিকা এখনো প্রকাশিত হয়নি।</p>
-              <p className="mt-2 text-sm text-slate-400">২৫ নভেম্বর কনফার্মড তালিকা ঘোষণা করা হবে।</p>
+              <Users className="mx-auto h-10 w-10 text-brand" />
+              <p className="mt-4 text-lg font-bold text-ink">তালিকা এখনো প্রকাশিত হয়নি।</p>
+              <p className="mt-2 text-sm text-ink-3">২৫ নভেম্বর কনফার্মড তালিকা ঘোষণা করা হবে।</p>
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {approved.map((person) => (
                 <div key={person.uid} className="glass flex items-start gap-4 p-6">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-400/15 text-emerald-300">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-green-50 text-green-700">
                     <BadgeCheck className="h-5 w-5" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-white">{person.name}</h3>
-                    <p className="mt-0.5 text-sm text-indigo-200">
+                    <h3 className="font-bold text-ink">{person.name}</h3>
+                    <p className="mt-0.5 text-sm text-brand">
                       {person.productName}
                       {person.teamName ? ` · ${person.teamName}` : ''}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">{person.institution}</p>
+                    <p className="mt-1 text-xs text-ink-3">{person.institution}</p>
                   </div>
                 </div>
               ))}

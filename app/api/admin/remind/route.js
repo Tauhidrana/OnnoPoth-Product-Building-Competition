@@ -2,7 +2,21 @@
 import nodemailer from 'nodemailer';
 import { getRecords, decisionFor } from '@/lib/gmail-store';
 import { getCookieValue, isAdminSession } from '@/lib/admin';
-import { event } from '@/lib/config';
+import { event, socialLinks } from '@/lib/config';
+import { layout, button, p, signoff, esc } from '@/lib/email';
+
+function reminderEmail(person) {
+  return layout({
+    preheader: 'আপনার আইডিয়া পর্যালোচনায় আছে। ২৫ নভেম্বর স্ট্যাটাস জানানো হবে।',
+    eyebrow: 'আইডিয়া যাচাই চলছে',
+    title: `প্রিয় ${esc(person.name || 'প্রতিযোগী')}`,
+    body:
+      p(`আপনার <strong>${esc(person.productName || 'প্রোডাক্ট')}</strong> আইডিয়া আমাদের পর্যালোচনায় আছে। ২৫ নভেম্বর স্ট্যাটাস জানানো হবে।`) +
+      p('রেজিস্ট্রেশনের ইমেইল ও WhatsApp নম্বর দিয়ে যেকোনো সময় নিজের স্ট্যাটাস দেখতে পারেন।') +
+      button('স্ট্যাটাস দেখুন', `${socialLinks.siteUrl}/status`) +
+      signoff(),
+  });
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,17 +51,7 @@ export async function POST(req) {
           from: `"${event.shortName}" <${GMAIL_USER}>`,
           to: person.email,
           subject: 'মনে করিয়ে দিচ্ছি: আইডিয়া যাচাই চলছে',
-          html: `<div style="font-family:'Noto Sans Bengali',Arial,sans-serif;max-width:600px;margin:auto;color:#0f172a;">
-            <div style="background:linear-gradient(135deg,#3b82f6,#6366f1,#a855f7);padding:20px;border-radius:14px 14px 0 0;">
-              <h1 style="color:#fff;margin:0;font-size:20px;">${event.name}</h1>
-            </div>
-            <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:24px;">
-              <p>প্রিয় ${String(person.name || 'প্রতিযোগী').replace(/</g, '&lt;')},</p>
-              <p style="line-height:1.8;color:#475569;">আপনার <strong>${String(person.productName || 'প্রোডাক্ট').replace(/</g, '&lt;')}</strong> আইডিয়া আমাদের পর্যালোচনায় আছে। ২৫ নভেম্বর স্ট্যাটাস জানানো হবে।</p>
-              <p style="line-height:1.8;color:#475569;">নিজের স্ট্যাটাস যেকোনো সময় চেক করতে পারেন।</p>
-              <p style="color:#64748b;font-size:13px;">— ${event.organizer} আয়োজক কমিটি</p>
-            </div>
-          </div>`,
+          html: reminderEmail(person),
         });
         sent += 1;
       } catch (error) {

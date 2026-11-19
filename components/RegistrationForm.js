@@ -2,27 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  AlertCircle,
-  ArrowRight,
-  Building2,
-  CalendarDays,
-  Check,
-  CheckCircle2,
-  Clock3,
-  GitBranch,
-  GraduationCap,
-  Lightbulb,
-  ListChecks,
-  Loader2,
-  Lock,
-  Mail,
-  MessageCircle,
-  ShieldCheck,
-  Target,
-  User,
-  Users,
-} from 'lucide-react';
+import { AlertCircle, ArrowRight, CalendarDays, Check, CheckCircle2, Clock3, Loader2, Lock, ShieldCheck, User, Users } from 'lucide-react';
 import SectionHeading from './SectionHeading';
 import { dates, isRegistrationOpen, event } from '@/lib/config';
 
@@ -57,21 +37,39 @@ function FieldError({ message }) {
   );
 }
 
-/** numbered group heading used inside the form */
-function FormGroup({ index, title, subtitle, children }) {
+/** Label + control + error, wired together for screen readers. */
+function Field({ id, label, hint, error, children }) {
   return (
-    <div className="border-b border-white/10 pb-9 last:border-0 last:pb-0">
-      <div className="mb-7 flex items-center gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-indigo-400/25 bg-indigo-500/10 text-xs font-extrabold text-indigo-300">
-          {index}
+    <div>
+      <label className="field-label" htmlFor={id}>{label}</label>
+      {children}
+      {hint && !error && <p className="field-hint">{hint}</p>}
+      <FieldError message={error} />
+    </div>
+  );
+}
+
+/** Numbered group; the number turns into a tick once its fields are filled. */
+function FormGroup({ index, title, subtitle, complete, children }) {
+  return (
+    <fieldset className="border-t border-line pt-8 first:border-0 first:pt-0">
+      <legend className="sr-only">{title}</legend>
+      <div className="mb-6 flex items-center gap-3">
+        <span
+          className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-semibold transition-colors duration-300 ${
+            complete ? 'bg-brand text-white' : 'border border-line-strong text-ink-2'
+          }`}
+          aria-hidden
+        >
+          {complete ? <Check className="h-4 w-4" strokeWidth={3} /> : index}
         </span>
         <div>
-          <h3 className="text-base font-bold text-white">{title}</h3>
-          {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+          <h3 className="text-lg font-semibold">{title}</h3>
+          {subtitle && <p className="text-sm text-ink-3">{subtitle}</p>}
         </div>
       </div>
-      <div className="space-y-6">{children}</div>
-    </div>
+      <div className="space-y-5">{children}</div>
+    </fieldset>
   );
 }
 
@@ -139,7 +137,12 @@ export default function RegistrationForm() {
     const found = validate();
     setErrors(found);
     if (Object.keys(found).length > 0) {
-      document.getElementById('register')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Take the person straight to the first field that needs fixing.
+      const first = Object.keys(found)[0];
+      const id = first === 'members' || (first === 'fullName' && isTeam) ? 'member-0' : first;
+      const el = document.getElementById(id);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el?.focus({ preventScroll: true });
       return;
     }
 
@@ -177,94 +180,88 @@ export default function RegistrationForm() {
   }
 
   const closed = registrationOpen === false;
+  const filled = (v) => String(v).trim().length > 0;
+  const identityDone =
+    (isTeam ? filled(form.teamName) && form.members.some(filled) : filled(form.fullName)) &&
+    [form.institution, form.className, form.whatsapp, form.email, form.github, form.productName].every(filled);
+  const ideaDone = [form.problem, form.users, form.features].every(filled);
+  const inputProps = (name) => ({
+    id: name,
+    className: 'field-input',
+    value: form[name],
+    onChange: (e) => setField(name, e.target.value),
+    'aria-invalid': errors[name] ? true : undefined,
+  });
 
   return (
-    <section data-reveal id="register" className="relative py-24 sm:py-32">
-      <div className="pointer-events-none absolute left-1/4 top-0 h-96 w-[40rem] rounded-full bg-indigo-600/10 blur-[120px]" />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section id="register" className="section border-t border-line bg-surface">
+      <div className="page">
         <SectionHeading
-          index="07"
-          eyebrow="Registration"
-          title={<>এখুনি <span className="text-gradient-warm">রেজিস্ট্রেশন</span> করো</>}
-          subtitle={`রেজিস্ট্রেশন শেষ হবে ${dates.registrationDeadlineLabel}। ফর্ম পূরণ করে আইডিয়া জমা দিন—আমরা ইমেইলে কনফার্মেশন পাঠাব।`}
+          eyebrow="রেজিস্ট্রেশন"
+          title="এখনই রেজিস্টার করো"
+          subtitle={`রেজিস্ট্রেশন শেষ ${dates.registrationDeadlineLabel}। ফর্ম পূরণ করে আইডিয়া জমা দাও — ইমেইলে কনফার্মেশন পাঠানো হবে।`}
         />
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
-          {/* ---------------- Sticky info panel ---------------- */}
-          <aside className="space-y-4 lg:sticky lg:top-28">
-            <div className="glass relative overflow-hidden p-7">
-              <div className="absolute inset-x-0 top-0 h-1 bg-accent-gradient" />
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-300">
-                <CalendarDays className="h-3.5 w-3.5" /> Deadline
+        <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] lg:items-start lg:gap-14">
+          <aside className="space-y-6 lg:sticky lg:top-24">
+            <div className="rounded-2xl bg-navy p-7 text-white">
+              <p className="flex items-center gap-2 text-sm text-white/70">
+                <CalendarDays className="h-4 w-4" /> শেষ সময়
               </p>
-              <p className="mt-3 text-2xl font-extrabold leading-tight text-white">২৩ নভেম্বর</p>
-              <p className="text-sm font-semibold text-indigo-200">রাত ১১:৫৯ (UTC+6)</p>
-              <div className="my-6 h-px bg-white/10" />
-              <ul className="space-y-3.5 text-sm text-slate-300">
+              <p className="mt-2 font-display text-3xl font-semibold text-white">২৩ নভেম্বর</p>
+              <p className="text-white/80">রাত ১১:৫৯ (UTC+6)</p>
+              <ul className="mt-6 space-y-3 border-t border-white/15 pt-6 text-[15px] text-white/85">
                 {[
                   '২৫ নভেম্বর কনফার্মড তালিকা ঘোষণা',
-                  'ইমেইলে কনফার্মেশন পাবেন',
-                  'একজন শুধু একটিমাত্র টিমে অংশ নিতে পারেন',
-                  'কোনো অভিজ্ঞতা লাগবে না',
+                  'ইমেইলে কনফার্মেশন পাবে',
+                  'একজন শুধু একটি টিমে অংশ নিতে পারবে',
+                  'কোনো অভিজ্ঞতা লাগবে না, কোনো ফি নেই',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" strokeWidth={3} />
+                    <Check className="mt-1 h-4 w-4 shrink-0 text-signal" strokeWidth={3} />
                     {item}
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="glass p-7">
-              <div className="mb-3 inline-grid h-10 w-10 place-items-center rounded-xl bg-indigo-500/15 text-indigo-300">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <p className="text-sm font-bold text-white">আপনার তথ্য নিরাপদ</p>
-              <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
-                তথ্য শুধুমাত্র {event.organizer} আয়োজক কমিটি দেখতে পাবে। আপনার ইমেইল reply-to হিসেবে
-                ব্যবহার করা হবে।
+            <div className="flex gap-3 px-1 text-sm text-ink-3">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>
+                তথ্য শুধু {event.organizer} আয়োজক কমিটি দেখবে। প্রশ্ন থাকলে{' '}
+                <a href="#contact" className="link">যোগাযোগ করো</a>।
               </p>
             </div>
-
-            <a
-              href="#contact"
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-4 text-sm font-bold text-slate-200 transition hover:border-indigo-400/40 hover:text-white"
-            >
-              প্রশ্ন আছে? যোগাযোগ করুন <ArrowRight className="h-4 w-4 text-indigo-300" />
-            </a>
           </aside>
 
-          {/* ---------------- Form ---------------- */}
-          <form onSubmit={handleSubmit} noValidate className="glass p-6 sm:p-9">
+          <form onSubmit={handleSubmit} noValidate className="card p-6 sm:p-9">
             {closed && (
-              <div className="mb-8 flex items-center gap-3 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-200">
+              <div className="mb-8 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
                 <Lock className="h-5 w-5 shrink-0" />
                 রেজিস্ট্রেশনের সময় শেষ হয়ে গেছে। ধন্যবাদ!
               </div>
             )}
 
-            <div className="space-y-9">
-              {/* Group 01 — identity */}
-              <FormGroup index="01" title="আপনার পরিচয়" subtitle="কে অংশ নিচ্ছেন?">
+            <div className="space-y-8">
+              <FormGroup index="১" title="তোমার পরিচয়" subtitle="কে অংশ নিচ্ছে?" complete={identityDone}>
                 <div>
-                  <p className="field-label">রেজিস্ট্রেশনের ধরন *</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <p className="field-label" id="reg-type">রেজিস্ট্রেশনের ধরন</p>
+                  <div role="radiogroup" aria-labelledby="reg-type" className="grid grid-cols-2 gap-1 rounded-xl bg-sunken p-1">
                     {[
-                      { value: 'solo', label: 'একা (Solo)', icon: User },
-                      { value: 'team', label: 'টিম (Team)', icon: Users },
+                      { value: 'solo', label: 'একা', icon: User },
+                      { value: 'team', label: 'টিম (৩ জন পর্যন্ত)', icon: Users },
                     ].map(({ value, label, icon: Icon }) => (
                       <button
                         key={value}
                         type="button"
+                        role="radio"
+                        aria-checked={form.registrationType === value}
                         onClick={() => {
                           setField('registrationType', value);
                           setStatus(null);
                         }}
-                        aria-pressed={form.registrationType === value}
-                        className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition ${
-                          form.registrationType === value
-                            ? 'border-indigo-400 bg-indigo-500/20 text-white shadow-glow'
-                            : 'border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/25'
+                        className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${
+                          form.registrationType === value ? 'bg-surface text-ink shadow-card' : 'text-ink-3 hover:text-ink'
                         }`}
                       >
                         <Icon className="h-4 w-4" /> {label}
@@ -273,251 +270,105 @@ export default function RegistrationForm() {
                   </div>
                 </div>
 
-                {isTeam && (
-                  <div className="rounded-2xl border border-indigo-400/20 bg-indigo-500/[0.06] p-5">
-                    <p className="mb-5 flex items-center gap-2 text-sm font-bold text-indigo-200">
-                      <Users className="h-4 w-4" /> টিমের তথ্য
-                    </p>
-                    <div className="space-y-6">
-                      <div>
-                        <label className="field-label" htmlFor="teamName">টিমের নাম *</label>
-                        <input
-                          id="teamName"
-                          className="field-input"
-                          placeholder="যেমন: Team Syntax Error"
-                          value={form.teamName}
-                          onChange={(e) => setField('teamName', e.target.value)}
-                          aria-invalid={!!errors.teamName}
-                        />
-                        <FieldError message={errors.teamName} />
-                      </div>
+                {isTeam ? (
+                  <div className="space-y-5 rounded-xl border border-line bg-paper p-5">
+                    <Field id="teamName" label="টিমের নাম" error={errors.teamName}>
+                      <input {...inputProps('teamName')} placeholder="যেমন: Team Syntax Error" />
+                    </Field>
 
-                      <div>
-                        <label className="field-label">সদস্যদের নাম * (সর্বোচ্চ ৩ জন)</label>
-                        <p className="mb-3 text-xs text-slate-400">প্রথম ঘরটি টিম লিডারসহ যেকোনো সদস্য।</p>
-                        <div className="space-y-3">
-                          {form.members.map((member, i) => (
-                            <input
-                              key={i}
-                              className="field-input"
-                              placeholder={`সদস্য ${i + 1} এর পুরো নাম${i === 0 ? ' *' : ' (ঐচ্ছিক)'}`}
-                              value={member}
-                              onChange={(e) => {
-                                setMember(i, e.target.value);
-                                clearError('members');
-                                clearError('fullName');
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <FieldError message={errors.members || errors.fullName} />
+                    <div>
+                      <p className="field-label">সদস্যদের নাম</p>
+                      <div className="space-y-2.5">
+                        {form.members.map((member, i) => (
+                          <input
+                            key={i}
+                            id={`member-${i}`}
+                            className="field-input"
+                            aria-label={`সদস্য ${i + 1}`}
+                            placeholder={`সদস্য ${i + 1} এর পুরো নাম${i === 0 ? '' : ' (ঐচ্ছিক)'}`}
+                            value={member}
+                            onChange={(e) => {
+                              setMember(i, e.target.value);
+                              clearError('members');
+                              clearError('fullName');
+                            }}
+                          />
+                        ))}
                       </div>
-
-                      <div>
-                        <label className="field-label" htmlFor="teamLeader">টিম লিডার নির্বাচন করুন *</label>
-                        <select
-                          id="teamLeader"
-                          className="field-input"
-                          value={form.teamLeader}
-                          onChange={(e) => setField('teamLeader', Number(e.target.value))}
-                        >
-                          {form.members.map((member, i) => (
-                            <option key={i} value={i}>
-                              সদস্য {i + 1}{member.trim() ? ` — ${member.trim()}` : ' (খালি)'}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      <FieldError message={errors.members || errors.fullName} />
                     </div>
+
+                    <Field id="teamLeader" label="টিম লিডার">
+                      <select
+                        id="teamLeader"
+                        className="field-input"
+                        value={form.teamLeader}
+                        onChange={(e) => setField('teamLeader', Number(e.target.value))}
+                      >
+                        {form.members.map((member, i) => (
+                          <option key={i} value={i}>
+                            সদস্য {i + 1}{member.trim() ? ` — ${member.trim()}` : ' (খালি)'}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
                   </div>
+                ) : (
+                  <Field id="fullName" label="পুরো নাম" error={errors.fullName}>
+                    <input {...inputProps('fullName')} placeholder="তোমার পুরো নাম" autoComplete="name" />
+                  </Field>
                 )}
 
-                {!isTeam && (
-                  <div>
-                    <label className="field-label" htmlFor="fullName">পুরো নাম *</label>
-                    <div className="relative">
-                      <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                      <input
-                        id="fullName"
-                        className="field-input !pl-11"
-                        placeholder="আপনার পুরো নাম"
-                        value={form.fullName}
-                        onChange={(e) => setField('fullName', e.target.value)}
-                      />
-                    </div>
-                    <FieldError message={errors.fullName} />
-                  </div>
-                )}
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div>
-                    <label className="field-label" htmlFor="institution">প্রতিষ্ঠানের নাম *</label>
-                    <div className="relative">
-                      <Building2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                      <input
-                        id="institution"
-                        className="field-input !pl-11"
-                        placeholder="স্কুল / কলেজ / বিশ্ববিদ্যালয়"
-                        value={form.institution}
-                        onChange={(e) => setField('institution', e.target.value)}
-                      />
-                    </div>
-                    <FieldError message={errors.institution} />
-                  </div>
-                  <div>
-                    <label className="field-label" htmlFor="className">শ্রেণি / সেমিস্টার *</label>
-                    <div className="relative">
-                      <GraduationCap className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                      <input
-                        id="className"
-                        className="field-input !pl-11"
-                        placeholder="Class 12 / 3rd Semester"
-                        value={form.className}
-                        onChange={(e) => setField('className', e.target.value)}
-                      />
-                    </div>
-                    <FieldError message={errors.className} />
-                  </div>
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div>
-                    <label className="field-label" htmlFor="whatsapp">WhatsApp নম্বর *</label>
-                    <div className="relative">
-                      <MessageCircle className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                      <input
-                        id="whatsapp"
-                        className="field-input !pl-11"
-                        placeholder="01XXXXXXXXX"
-                        inputMode="numeric"
-                        value={form.whatsapp}
-                        onChange={(e) => setField('whatsapp', e.target.value)}
-                      />
-                    </div>
-                    <FieldError message={errors.whatsapp} />
-                  </div>
-                  <div>
-                    <label className="field-label" htmlFor="email">ইমেইল ঠিকানা *</label>
-                    <div className="relative">
-                      <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                      <input
-                        id="email"
-                        type="email"
-                        className="field-input !pl-11"
-                        placeholder="you@example.com"
-                        value={form.email}
-                        onChange={(e) => setField('email', e.target.value)}
-                      />
-                    </div>
-                    <FieldError message={errors.email} />
-                  </div>
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div>
-                    <label className="field-label" htmlFor="github">GitHub ইউজারনেম *</label>
-                    <div className="relative">
-                      <GitBranch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                      <input
-                        id="github"
-                        className="field-input !pl-11"
-                        placeholder="your-github-username"
-                        value={form.github}
-                        onChange={(e) => setField('github', e.target.value)}
-                      />
-                    </div>
-                    <FieldError message={errors.github} />
-                  </div>
-                  <div>
-                    <label className="field-label" htmlFor="productName">প্রোডাক্টের নাম *</label>
-                    <div className="relative">
-                      <Lightbulb className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                      <input
-                        id="productName"
-                        className="field-input !pl-11"
-                        placeholder="আপনার প্রোডাক্টের নাম"
-                        value={form.productName}
-                        onChange={(e) => setField('productName', e.target.value)}
-                      />
-                    </div>
-                    <FieldError message={errors.productName} />
-                  </div>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field id="institution" label="প্রতিষ্ঠানের নাম" error={errors.institution}>
+                    <input {...inputProps('institution')} placeholder="স্কুল / কলেজ / বিশ্ববিদ্যালয়" />
+                  </Field>
+                  <Field id="className" label="শ্রেণি / সেমিস্টার" error={errors.className}>
+                    <input {...inputProps('className')} placeholder="Class 12 / 3rd Semester" />
+                  </Field>
+                  <Field id="whatsapp" label="WhatsApp নম্বর" error={errors.whatsapp}>
+                    <input {...inputProps('whatsapp')} placeholder="01XXXXXXXXX" inputMode="numeric" autoComplete="tel" />
+                  </Field>
+                  <Field id="email" label="ইমেইল" error={errors.email}>
+                    <input {...inputProps('email')} type="email" placeholder="you@example.com" autoComplete="email" />
+                  </Field>
+                  <Field id="github" label="GitHub ইউজারনেম" error={errors.github}>
+                    <input {...inputProps('github')} placeholder="your-github-username" autoCapitalize="none" />
+                  </Field>
+                  <Field id="productName" label="প্রোডাক্টের নাম" error={errors.productName}>
+                    <input {...inputProps('productName')} placeholder="তোমার প্রোডাক্টের নাম" />
+                  </Field>
                 </div>
               </FormGroup>
 
-              {/* Group 02 — idea */}
-              <FormGroup index="02" title="আপনার আইডিয়া" subtitle="কী বানাবে, কেন বানাবে?">
-                <div>
-                  <label className="field-label" htmlFor="problem">কোন সমস্যার সমাধান করবে? *</label>
-                  <div className="relative">
-                    <Target className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-slate-500" />
-                    <textarea
-                      id="problem"
-                      rows={3}
-                      className="field-input !pl-11 resize-y"
-                      placeholder="বিস্তারিত লিখুন—কে, কী সমস্যার সম্মুখীন হচ্ছে?"
-                      value={form.problem}
-                      onChange={(e) => setField('problem', e.target.value)}
-                    />
-                  </div>
-                  <FieldError message={errors.problem} />
-                </div>
-
-                <div>
-                  <label className="field-label" htmlFor="users">কারা এটি ব্যবহার করবে? *</label>
-                  <div className="relative">
-                    <Users className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-slate-500" />
-                    <textarea
-                      id="users"
-                      rows={3}
-                      className="field-input !pl-11 resize-y"
-                      placeholder="যেমন: গ্রামীণ শিক্ষার্থী, ছোট দোকানদার ইত্যাদি"
-                      value={form.users}
-                      onChange={(e) => setField('users', e.target.value)}
-                    />
-                  </div>
-                  <FieldError message={errors.users} />
-                </div>
-
-                <div>
-                  <label className="field-label" htmlFor="features">প্রধান ৩–৫টি ফিচার *</label>
-                  <div className="relative">
-                    <ListChecks className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-slate-500" />
-                    <textarea
-                      id="features"
-                      rows={4}
-                      className="field-input !pl-11 resize-y"
-                      placeholder="১. লগইন ২. ড্যাশবোর্ড ৩. রিপোর্ট …"
-                      value={form.features}
-                      onChange={(e) => setField('features', e.target.value)}
-                    />
-                  </div>
-                  <FieldError message={errors.features} />
-                </div>
+              <FormGroup index="২" title="তোমার আইডিয়া" subtitle="কী বানাবে, কেন বানাবে?" complete={ideaDone}>
+                <Field id="problem" label="কোন সমস্যার সমাধান করবে?" error={errors.problem}>
+                  <textarea {...inputProps('problem')} rows={3} className="field-input resize-y" placeholder="কে, কী সমস্যার মুখোমুখি হচ্ছে?" />
+                </Field>
+                <Field id="users" label="কারা এটি ব্যবহার করবে?" error={errors.users}>
+                  <textarea {...inputProps('users')} rows={2} className="field-input resize-y" placeholder="যেমন: গ্রামের শিক্ষার্থী, ছোট দোকানদার" />
+                </Field>
+                <Field id="features" label="প্রধান ৩–৫টি ফিচার" error={errors.features}>
+                  <textarea {...inputProps('features')} rows={4} className="field-input resize-y" placeholder="১. লগইন  ২. ড্যাশবোর্ড  ৩. রিপোর্ট …" />
+                </Field>
               </FormGroup>
 
-              {/* Group 03 — confirmation */}
-              <FormGroup index="03" title="কনফার্মেশন" subtitle="বাকি আছে শুধু একটা চেকবক্স।">
-                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300 transition hover:border-indigo-400/40">
+              <FormGroup index="৩" title="নিশ্চিত করো" complete={form.agree}>
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line-strong p-4 text-[15px] text-ink-2 transition-colors hover:border-ink-3 has-[:checked]:border-brand has-[:checked]:bg-brand-soft/50">
                   <input
+                    id="agree"
                     type="checkbox"
                     checked={form.agree}
                     onChange={(e) => {
                       setField('agree', e.target.checked);
                       clearError('agree');
                     }}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/30 bg-navy-950 accent-indigo-500"
+                    className="mt-1 h-4 w-4 shrink-0 accent-brand"
                   />
                   <span>
                     আমি{' '}
-                    <Link
-                      href="/rulebook"
-                      target="_blank"
-                      className="font-semibold text-indigo-300 underline underline-offset-2 hover:text-indigo-200"
-                    >
-                      রুলবুক
-                    </Link>{' '}
-                    পড়েছি এবং সব নিয়ম মেনে চলব *
+                    <Link href="/rulebook" target="_blank" className="link">রুলবুক</Link>{' '}
+                    পড়েছি এবং সব নিয়ম মেনে চলব
                   </span>
                 </label>
                 <FieldError message={errors.agree} />
@@ -538,48 +389,42 @@ export default function RegistrationForm() {
               </FormGroup>
             </div>
 
-            {/* submit */}
-            <div className="mt-9">
-              <button
-                type="submit"
-                disabled={submitting || closed}
-                className="btn-primary w-full !py-4 text-base"
-              >
+            <div className="mt-8">
+              <button type="submit" disabled={submitting || closed} className="btn-brand w-full !py-4 !text-base">
                 {closed ? (
-                  <>Registration Closed</>
+                  <>রেজিস্ট্রেশন বন্ধ</>
                 ) : submitting ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" /> পাঠানো হচ্ছে…
                   </>
                 ) : (
                   <>
-                    রেজিস্ট্রেশন জমা দিন <ArrowRight className="h-5 w-5" />
+                    রেজিস্ট্রেশন জমা দাও <ArrowRight className="h-5 w-5" />
                   </>
                 )}
               </button>
-              <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-slate-500">
-                <Clock3 className="h-3 w-3" /> প্রায় ২ মিনিট সময় লাগবে
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-sm text-ink-3">
+                <Clock3 className="h-3.5 w-3.5" /> প্রায় ২ মিনিট লাগবে
               </p>
             </div>
 
             {status === 'success' && (
-              <div className="mt-7 flex items-start gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5 text-sm text-emerald-200" role="status">
+              <div className="rise mt-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-5 text-[15px] text-green-800" role="status">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
                 <div>
-                  <p className="font-bold">রেজিস্ট্রেশন সফল! 🎉</p>
+                  <p className="font-semibold">রেজিস্ট্রেশন সফল হয়েছে</p>
                   <p className="mt-1 leading-relaxed">
-                    আপনার রেজিস্ট্রেশন গ্রহণ করা হয়েছে। ২৫ নভেম্বর কনফার্মড তালিকা ঘোষণা করা হবে।
-                    ইনবক্সে কনফার্মেশন ইমেইল চেক করুন (স্প্যাম ফোল্ডও দেখে নিন)।
+                    ২৫ নভেম্বর কনফার্মড তালিকা ঘোষণা করা হবে। ইনবক্সে কনফার্মেশন ইমেইল দেখে নাও (স্প্যাম ফোল্ডারও)।
                   </p>
                 </div>
               </div>
             )}
 
             {status === 'error' && (
-              <div className="mt-7 flex items-start gap-3 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-5 text-sm text-rose-200" role="alert">
+              <div className="rise mt-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-5 text-[15px] text-red-800" role="alert">
                 <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                 <div>
-                  <p className="font-bold">কিছু সমস্যা হয়েছে।</p>
+                  <p className="font-semibold">কিছু সমস্যা হয়েছে</p>
                   <p className="mt-1 leading-relaxed">{serverMessage}</p>
                 </div>
               </div>

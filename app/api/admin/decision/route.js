@@ -8,50 +8,38 @@ import { getCookieValue, isAdminSession, createApprovalToken } from '@/lib/admin
 import { event, socialLinks } from '@/lib/config';
 import { eventIcs } from '@/lib/calendar';
 import { clearRecordsCache } from '@/lib/gmail-store';
+import { layout, button, p, steps, signoff, esc } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
-function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
 function approvalEmail(name, productName, link) {
-  return `
-  <div style="font-family:'Noto Sans Bengali',Arial,sans-serif;max-width:620px;margin:auto;color:#0f172a;">
-    <div style="background:linear-gradient(135deg,#3b82f6,#6366f1,#a855f7);padding:22px 26px;border-radius:14px 14px 0 0;">
-      <h1 style="color:#fff;margin:0;font-size:22px;">আপনার আইডিয়া অ্যাপ্রুভ হয়েছে! 🎉</h1>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:26px;">
-      <p style="font-size:16px;">অভিনন্দন, ${escapeHtml(name)}!</p>
-      <p style="font-size:15px;line-height:1.8;color:#475569;">
-        <strong>${escapeHtml(productName)}</strong> প্রোডাক্টের আইডিয়া যাচাইয়ে পাস করেছে। এখন আপনি ফাইনাল প্রোডাক্ট জমা দিতে পারেন।
-      </p>
-      <p style="margin:26px 0 10px;font-size:14px;color:#475569;">নিচের বাটনে ক্লিক করে সাবমিশন ফর্মে যান:</p>
-      <a href="${link}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#6366f1,#a855f7);color:#fff;text-decoration:none;padding:13px 26px;border-radius:999px;font-weight:bold;">
-        প্রোডাক্ট জমা দিন →
-      </a>
-      <p style="margin-top:24px;font-size:12px;color:#94a3b8;">এই লিংকটি শুধু আপনার জন্য। ২৭ নভেম্বর রাত ১০টার পর কাজ করবে না।</p>
-    </div>
-  </div>`;
+  return layout({
+    preheader: `${productName} অ্যাপ্রুভ হয়েছে। ২৭ নভেম্বর দেখা হবে।`,
+    eyebrow: 'আইডিয়া অ্যাপ্রুভ হয়েছে',
+    title: `অভিনন্দন, ${esc(name)}`,
+    body:
+      p(`<strong>${esc(productName)}</strong> আইডিয়াটি যাচাইয়ে পাস করেছে। আপনি মূল প্রতিযোগিতায় অংশ নিচ্ছেন।`) +
+      steps([
+        ['২৬ নভেম্বর', 'ব্রিফিং ও WhatsApp গ্রুপ'],
+        ['২৭ নভেম্বর, সকাল ১০টা', 'নতুন রিপো খুলে কাজ শুরু'],
+        ['২৭ নভেম্বর, রাত ১০টার আগে', 'নিচের লিংক দিয়ে প্রোডাক্ট জমা'],
+      ]) +
+      button('প্রোডাক্ট জমা দিন', link) +
+      signoff(),
+    footnote: 'এই লিংকটি শুধু আপনার জন্য, কারও সাথে শেয়ার করবেন না। ২৭ নভেম্বর রাত ১০টার পর এটি আর কাজ করবে না।',
+  });
 }
 
 function declineEmail(name, productName) {
-  return `
-  <div style="font-family:'Noto Sans Bengali',Arial,sans-serif;max-width:620px;margin:auto;color:#0f172a;">
-    <div style="background:linear-gradient(135deg,#64748b,#475569);padding:22px 26px;border-radius:14px 14px 0 0;">
-      <h1 style="color:#fff;margin:0;font-size:22px;">আইডিয়া আপডেট</h1>
-    </div>
-    <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:26px;">
-      <p style="font-size:16px;">প্রিয় ${escapeHtml(name)},</p>
-      <p style="font-size:15px;line-height:1.8;color:#475569;">
-        <strong>${escapeHtml(productName)}</strong> আইডিয়াটি এইবারের জন্য নির্বাচিত হয়নি। আপনার আগ্রহের জন্য ধন্যবাদ — পরবর্তী ইভেন্টে আবার চেষ্টা করার সুযোগ থাকবে।
-      </p>
-      <p style="font-size:14px;color:#64748b;margin-top:24px;">— ${escapeHtml(event.organizer)} আয়োজক কমিটি</p>
-    </div>
-  </div>`;
+  return layout({
+    preheader: 'আইডিয়া যাচাইয়ের ফলাফল',
+    eyebrow: 'আইডিয়া আপডেট',
+    title: `প্রিয় ${esc(name)}`,
+    body:
+      p(`<strong>${esc(productName)}</strong> আইডিয়াটি এইবারের জন্য নির্বাচিত হয়নি। অংশ নিতে আগ্রহ দেখানোর জন্য ধন্যবাদ।`) +
+      p(`পরবর্তী ইভেন্টের খবর পেতে <a href="${socialLinks.facebook}" style="color:#2f5bea;">${esc(event.organizer)}-এর ফেসবুক পেজ</a> ফলো করুন।`) +
+      signoff(),
+  });
 }
 
 export async function POST(req) {

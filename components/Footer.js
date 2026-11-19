@@ -1,112 +1,69 @@
 import Link from 'next/link';
-import { ArrowUpRight, Heart } from 'lucide-react';
-import { event, navLinks, contacts, giftSponsor } from '@/lib/config';
+import { ArrowUpRight } from 'lucide-react';
+import Logo from './Logo';
+import { event, navLinks, participantLinks, contacts, giftSponsor } from '@/lib/config';
 
 export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative border-t border-white/10 bg-navy-950/70">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        {/* Final CTA */}
-        <div className="no-print relative mb-14 overflow-hidden rounded-3xl border border-indigo-400/20 bg-gradient-to-r from-indigo-600/20 via-purple-600/15 to-transparent p-7 sm:p-9">
-          <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-fuchsia-500/15 blur-[70px]" />
-          <div className="relative flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-300">
-                Ready to build?
-              </p>
-              <h3 className="mt-2 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-                তোমার আইডিয়ার অপেক্ষায় আছি।
-              </h3>
-              <p className="mt-2 text-sm text-slate-400">২৩ নভেম্বরের আগে রেজিস্ট্রেশন করুন।</p>
-            </div>
-            <a href="/#register" className="btn-primary shrink-0">
-              Register Now <ArrowUpRight className="h-4 w-4" />
-            </a>
-          </div>
+    <footer className="no-print border-t border-line bg-surface">
+      <div className="page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div>
+          <Logo />
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-3">
+            {event.tagline}। {event.organizer} — সবার জন্য উন্মুক্ত একটি লার্নিং কমিউনিটি।
+          </p>
         </div>
 
-        <div className="grid gap-10 md:grid-cols-3">
-          {/* Brand */}
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-navy-800 shadow-glow ring-1 ring-white/10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.svg" alt="OnnoPoth logo" className="h-7 w-7" />
-              </span>
-              <span className="text-lg font-extrabold text-white">{event.organizer}</span>
-            </div>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
-              {event.tagline}। {event.organizer} — একটি উন্মুক্ত লার্নিং কমিউনিটি।
-            </p>
-          </div>
+        <FooterList title="প্রতিযোগিতা" links={navLinks} />
+        <FooterList title="প্রতিযোগীদের জন্য" links={participantLinks} />
 
-          {/* Quick links */}
-          <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">Quick Links</h3>
-            <ul className="mt-4 grid grid-cols-2 gap-2 text-sm text-slate-400">
-              {navLinks.map((link) => (
-                <li key={link.label}>
-                  {link.href === '/rulebook' ? (
-                    <Link href={link.href} className="hover:text-indigo-300">
-                      {link.label}
-                    </Link>
-                  ) : (
-                    <a href={link.href} className="hover:text-indigo-300">
-                      {link.label}
-                    </a>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">Contact</h3>
-            <ul className="mt-4 space-y-3">
-              {contacts.map((person) => (
-                <li key={person.name} className="text-sm text-slate-400">
-                  <span className="block font-semibold text-slate-200">{person.name}</span>
-                  <span>{person.detail}</span>{' '}
-                  <a
-                    href={person.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-1 font-semibold text-indigo-300 hover:text-indigo-200"
-                  >
-                    {person.linkLabel} →
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div>
+          <h2 className="text-sm font-semibold text-ink">যোগাযোগ</h2>
+          <ul className="mt-4 space-y-3 text-sm">
+            {contacts.map((person) => (
+              <li key={person.name}>
+                <a href={person.link} target="_blank" rel="noopener noreferrer" className="group inline-flex flex-col text-ink-2 hover:text-ink">
+                  <span className="font-medium">{person.name}</span>
+                  <span className="inline-flex items-center gap-1 text-ink-3 group-hover:text-brand">
+                    {person.linkLabel} <ArrowUpRight className="h-3.5 w-3.5" />
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
+      </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-center text-xs text-slate-500 sm:flex-row sm:text-left">
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            Organized by {event.organizer} – আয়োজক কমিটি
-            <span className="text-slate-600">|</span>
-            Gift Sponsor:{' '}
-            <a
-              href={giftSponsor.facebook}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-amber-300 hover:text-amber-200"
-            >
-              {giftSponsor.name} ↗
+      <div className="border-t border-line">
+        <div className="page flex flex-col gap-2 py-5 text-[13px] text-ink-3 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            আয়োজক {event.organizer} · গিফট স্পনসর{' '}
+            <a href={giftSponsor.facebook} target="_blank" rel="noopener noreferrer" className="font-medium text-ink-2 hover:text-brand">
+              {giftSponsor.name}
             </a>
           </p>
-          <p className="flex items-center gap-1.5">
-            © {year} {event.organizer}. All rights reserved.
-            <Heart className="h-3 w-3 fill-rose-500 text-rose-500" />
-          </p>
-          <a href="#home" className="transition hover:text-indigo-300">
-            Back to top ↑
-          </a>
+          <p>© {year} {event.organizer}</p>
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterList({ title, links }) {
+  return (
+    <div>
+      <h2 className="text-sm font-semibold text-ink">{title}</h2>
+      <ul className="mt-4 space-y-2.5 text-sm">
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link href={link.href} className="text-ink-3 transition-colors hover:text-ink">
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

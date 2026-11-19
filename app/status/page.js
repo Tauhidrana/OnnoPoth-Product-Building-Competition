@@ -17,25 +17,25 @@ import SectionHeading from '@/components/SectionHeading';
 const STATUS = {
   approved: {
     icon: CheckCircle2,
-    color: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200',
-    title: 'অ্যাপ্রুভ হয়েছে 🎉',
+    color: 'border-green-200 bg-green-50 text-green-700',
+    title: 'অ্যাপ্রুভ হয়েছে',
     text: 'আপনার আইডিয়া যাচাইয়ে পাস করেছে। অ্যাপ্রুভাল ইমেইলে থাকা লিংক দিয়ে প্রোডাক্ট জমা দিন।',
   },
   pending: {
     icon: Clock3,
-    color: 'border-amber-400/40 bg-amber-500/10 text-amber-200',
+    color: 'border-amber-200 bg-amber-50 text-amber-800',
     title: 'পর্যালোচনা চলছে',
     text: 'আয়োজক কমিটি আপনার আইডিয়া যাচাই করছে। ২৫ নভেম্বর ফলাফল জানানো হবে।',
   },
   declined: {
     icon: XCircle,
-    color: 'border-rose-400/40 bg-rose-500/10 text-rose-200',
+    color: 'border-red-200 bg-red-50 text-red-700',
     title: 'এইবার নির্বাচিত হয়নি',
     text: 'আপনার আগ্রহের জন্য ধন্যবাদ। পরবর্তী ইভেন্টে আবার অংশ নেওয়ার সুযোগ থাকবে।',
   },
   'not-found': {
     icon: AlertCircle,
-    color: 'border-slate-400/30 bg-white/5 text-slate-300',
+    color: 'border-line bg-paper text-ink-2',
     title: 'কোনো রেজিস্ট্রেশন পাওয়া যায়নি',
     text: 'আপনি যে ইমেইল ও WhatsApp নম্বর দিয়েছেন তা আমাদের রেকর্ডে নেই। রেজিস্ট্রেশনের সময় ব্যবহার করা তথ্য দিয়ে আবার চেষ্টা করুন।',
   },
@@ -86,7 +86,7 @@ export default function StatusPage() {
             <div>
               <label className="field-label" htmlFor="st-email">ইমেইল *</label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
                 <input
                   id="st-email"
                   type="email"
@@ -101,7 +101,7 @@ export default function StatusPage() {
             <div>
               <label className="field-label" htmlFor="st-phone">WhatsApp নম্বর *</label>
               <div className="relative">
-                <MessageCircle className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <MessageCircle className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
                 <input
                   id="st-phone"
                   className="field-input !pl-11"
@@ -128,7 +128,7 @@ export default function StatusPage() {
         {result && info && (
           <div className={`mt-6 rounded-3xl border p-7 text-center sm:p-9 ${info.color}`}>
             <Icon className="mx-auto h-10 w-10" />
-            <h3 className="mt-4 text-2xl font-extrabold">{info.title}</h3>
+            <h3 className="mt-4 text-2xl font-bold">{info.title}</h3>
             <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed opacity-90">{info.text}</p>
             {result.name && (
               <p className="mt-5 text-sm font-semibold">
@@ -143,8 +143,8 @@ export default function StatusPage() {
           </div>
         )}
 
-        <p className="mt-8 text-center text-xs text-slate-500">
-          <Link href="/confirmed" className="text-indigo-300 hover:text-indigo-200">
+        <p className="mt-8 text-center text-xs text-ink-3">
+          <Link href="/confirmed" className="text-brand hover:text-brand-ink">
             কনফার্মড প্রতিযোগীদের তালিকা দেখুন →
           </Link>
         </p>

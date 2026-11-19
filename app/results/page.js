@@ -33,11 +33,11 @@ export default async function ResultsPage() {
 
         {results.length === 0 ? (
           <div className="glass mx-auto mt-14 max-w-2xl p-10 text-center sm:p-14">
-            <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl bg-amber-400/15 text-amber-300">
+            <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl bg-amber-50 text-amber-800">
               <Clock3 className="h-8 w-8" />
             </div>
-            <h3 className="text-2xl font-extrabold text-white">ফলাফলের অপেক্ষায় আছি</h3>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-400">
+            <h3 className="text-2xl font-bold text-ink">ফলাফলের অপেক্ষায় আছি</h3>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink-3">
               বিচারকমণ্ডলী জমা দেওয়া প্রোডাক্টগুলো যাচাই করছেন। ২৮ নভেম্বর সন্ধ্যায় সেরা তিনটি প্রোডাক্টের নাম ঘোষণা করা হবে।
             </p>
           </div>
@@ -48,17 +48,17 @@ export default async function ResultsPage() {
               const Icon = ICONS[theme];
               return (
                 <div key={winner.place} className="glass p-8 text-center">
-                  <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-accent-gradient">
-                    <Icon className="h-7 w-7 text-white" />
+                  <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-brand">
+                    <Icon className="h-7 w-7 text-ink" />
                   </div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-300">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
                     {winner.place} Place
                   </p>
-                  <h3 className="mt-2 text-xl font-extrabold text-white">{winner.name}</h3>
-                  <p className="mt-1 text-sm text-indigo-200">{winner.product}</p>
-                  <p className="mt-1 text-xs text-slate-500">{winner.institution}</p>
+                  <h3 className="mt-2 text-xl font-bold text-ink">{winner.name}</h3>
+                  <p className="mt-1 text-sm text-brand">{winner.product}</p>
+                  <p className="mt-1 text-xs text-ink-3">{winner.institution}</p>
                   {winner.marks != null && (
-                    <p className="mt-5 inline-block rounded-full bg-white/10 px-4 py-1.5 text-sm font-bold text-white">
+                    <p className="mt-5 inline-block rounded-full bg-sunken px-4 py-1.5 text-sm font-bold text-ink">
                       {winner.marks} / 100
                     </p>
                   )}
@@ -69,18 +69,18 @@ export default async function ResultsPage() {
         )}
 
         <div className="glass mt-12 p-7 sm:p-10">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-white">
-            <BarChart3 className="h-5 w-5 text-indigo-300" /> বিচারের মানদণ্ড (১০০ নম্বর)
+          <h2 className="flex items-center gap-2 text-lg font-bold text-ink">
+            <BarChart3 className="h-5 w-5 text-brand" /> বিচারের মানদণ্ড (১০০ নম্বর)
           </h2>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {judgingCriteria.map((c) => (
-              <div key={c.label} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
-                <span className="text-slate-300">{c.label}</span>
-                <span className="font-bold text-white">{c.marks}</span>
+              <div key={c.label} className="flex items-center justify-between rounded-xl border border-line bg-paper px-4 py-3 text-sm">
+                <span className="text-ink-2">{c.label}</span>
+                <span className="font-bold text-ink">{c.marks}</span>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-xs text-slate-500">{dates.competitionStartLabel} · Organized by OnnoPoth</p>
+          <p className="mt-6 text-xs text-ink-3">{dates.competitionStartLabel} · Organized by OnnoPoth</p>
         </div>
 
         <div className="mt-10 text-center">

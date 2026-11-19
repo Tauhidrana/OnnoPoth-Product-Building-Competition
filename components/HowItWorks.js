@@ -1,85 +1,82 @@
-import {
-  ClipboardList,
-  BadgeCheck,
-  GitBranch,
-  Hammer,
-  CloudUpload,
-  Send,
-} from 'lucide-react';
 import SectionHeading from './SectionHeading';
 import { dates } from '@/lib/config';
 
-const steps = [
+const STEPS = [
   {
-    icon: ClipboardList,
-    title: 'রেজিস্ট্রেশন ও আইডিয়া',
-    text: `ফর্ম পূরণ করে প্রোডাক্টের নাম ও আইডিয়া জমা দিন (${dates.registrationWindowLabel})।`,
+    when: dates.registrationWindowLabel,
+    title: 'রেজিস্টার করো',
+    text: 'ফর্মে প্রোডাক্টের নাম আর আইডিয়া লিখে জমা দাও। একা বা সর্বোচ্চ ৩ জনের টিম।',
   },
   {
-    icon: BadgeCheck,
-    title: 'কনফার্মেশন পান',
-    text: 'আইডিয়া যাচাইয়ের পর ২৫ নভেম্বর কনফার্মড তালিকা ঘোষণা হবে।',
+    when: '২৪–২৫ নভেম্বর',
+    title: 'কনফার্মেশন পাও',
+    text: 'আয়োজক কমিটি আইডিয়া যাচাই করবে। ২৫ নভেম্বর কনফার্মড তালিকা, ইমেইলেও জানানো হবে।',
   },
   {
-    icon: GitBranch,
-    title: 'অ্যাকাউন্ট প্রস্তুত',
-    text: 'আগেই GitHub ও Vercel অ্যাকাউন্ট তৈরি করে রাখুন—লগইন সবচেয়ে সহজ।',
+    when: '২৭ নভেম্বর, সকাল ১০টা',
+    title: '১২ ঘণ্টায় বানাও',
+    text: 'নতুন রিপো খুলে কাজ শুরু। ChatGPT, Claude, Cursor — যেকোনো AI টুল ব্যবহার করা যাবে।',
   },
   {
-    icon: Hammer,
-    title: 'নির্মাণ শুরু',
-    text: '২৭ নভেম্বর সকাল ১০টার পর নতুন রিপো খুলে AI-এর সাহায্যে বানানো শুরু করুন।',
+    when: '২৭ নভেম্বর, রাত ১০টা',
+    title: 'লাইভ করে জমা দাও',
+    text: 'Vercel, Lovable বা v0-তে প্রোডাক্ট লাইভ করে লিংক জমা দাও। ২৮ নভেম্বর ফলাফল।',
   },
-  {
-    icon: CloudUpload,
-    title: 'Vercel ডিপ্লয়',
-    text: 'রাত ৯টার মধ্যে Vercel-এ প্রোডাক্ট ডিপ্লয় শুরু করুন।',
-  },
-  {
-    icon: Send,
-    title: 'সবকিছু জমা দিন',
-    text: 'রাত ১০টার আগে GitHub লিংক, Live লিংক ও README জমা দিন।',
-  },
+];
+
+const DAY = [
+  { time: '১০:০০', label: 'কাজ শুরু' },
+  { time: '২১:০০', label: 'ডিপ্লয় শুরু করো' },
+  { time: '২২:০০', label: 'জমার শেষ সময়' },
 ];
 
 export default function HowItWorks() {
   return (
-    <section data-reveal id="rules" className="relative py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section id="about" className="section border-t border-line bg-surface">
+      <div className="page">
         <SectionHeading
-          index="04"
-          eyebrow="How it works"
-          title={<>কীভাবে <span className="text-gradient-cool">কাজ করবে</span></>}
-          subtitle="মাত্র ৬টি ধাপ—এবং তুমি প্রস্তুত।"
+          eyebrow="কীভাবে কাজ করে"
+          title="চারটি ধাপ, একটি লাইভ প্রোডাক্ট"
+          subtitle="এটা কোনো পরীক্ষা নয়। আসল কাজ হলো হাতে-কলমে কিছু বানানো — কোড, ডিজাইন আর ডিবাগিংয়ে AI তোমার সহকারী।"
         />
 
-        <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {steps.map(({ icon: Icon, title, text }, i) => (
-            <div
-              key={title}
-              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-7 transition duration-300 hover:-translate-y-1 hover:border-indigo-400/40 hover:bg-white/[0.06]"
-            >
-              {/* bottom accent line */}
-              <div className="absolute inset-x-0 bottom-0 h-[2px] scale-x-0 bg-accent-gradient transition-transform duration-500 group-hover:scale-x-100" />
-
-              <div className="flex items-start justify-between">
-                <div className="relative grid h-12 w-12 place-items-center rounded-2xl border border-cyan-400/25 bg-cyan-400/10 text-cyan-300 transition group-hover:scale-110">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <span className="text-4xl font-extrabold leading-none text-white/[0.05]">
-                  0{i + 1}
+        <ol data-stagger className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map((step, i) => (
+            <li key={step.title} className="group relative bg-surface p-6 transition-colors hover:bg-paper sm:p-7">
+              <div className="flex items-center gap-3">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-ink font-display text-sm font-semibold text-white transition-colors group-hover:bg-brand">
+                  {['১', '২', '৩', '৪'][i]}
                 </span>
+                <span className="text-[13px] font-medium text-ink-3">{step.when}</span>
               </div>
-
-              <h3 className="mt-6 text-base font-bold text-white">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">{text}</p>
-
-              <div className="mt-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-300/70">
-                Step {i + 1} of 6
-                <span className="h-px flex-1 bg-white/10" />
-              </div>
-            </div>
+              <h3 className="mt-6 text-xl font-semibold">{step.title}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{step.text}</p>
+            </li>
           ))}
+        </ol>
+
+        <div data-reveal className="mt-6 grid gap-6 rounded-2xl border border-line bg-paper p-6 sm:p-7 lg:grid-cols-[1fr_1.4fr] lg:items-center">
+          <div>
+            <h3 className="text-lg font-semibold">বিল্ড ডে, ২৭ নভেম্বর</h3>
+            <p className="mt-1.5 text-[15px] text-ink-2">
+              আগেই GitHub ও Vercel অ্যাকাউন্ট খুলে রাখো (অথবা Lovable / v0)। ফ্রি প্ল্যানই যথেষ্ট।
+            </p>
+          </div>
+          <ol className="relative grid grid-cols-3">
+            <span aria-hidden className="absolute left-[6px] right-[6px] top-[5px] h-px bg-line-strong" />
+            {DAY.map((d, i) => (
+              <li key={d.time} className={`relative ${i === 1 ? 'text-center' : i === 2 ? 'text-right' : ''}`}>
+                <span
+                  aria-hidden
+                  className={`relative inline-block h-[11px] w-[11px] rounded-full border-2 ${
+                    i === 2 ? 'border-brand bg-brand' : 'border-ink-3 bg-paper'
+                  }`}
+                />
+                <p className="mt-3 font-display text-xl font-semibold tabular-nums">{d.time}</p>
+                <p className="text-[13px] text-ink-3">{d.label}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
     </section>

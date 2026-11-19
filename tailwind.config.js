@@ -1,62 +1,29 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    './app/**/*.{js,jsx}',
-    './components/**/*.{js,jsx}',
-    './lib/**/*.{js,jsx}',
-  ],
+  content: ['./app/**/*.{js,jsx,ts,tsx}', './components/**/*.{js,jsx,ts,tsx}', './lib/**/*.{js,jsx}'],
   theme: {
     extend: {
       fontFamily: {
-        // Bangla is the default typeface across the whole site.
-        sans: ['"Noto Sans Bengali"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-body)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'var(--font-body)', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
-        navy: {
-          950: '#050a1f',
-          900: '#070d24',
-          850: '#0a1230',
-          800: '#0e1838',
-          700: '#152248',
-        },
-        electric: {
-          blue: '#3b82f6',
-          indigo: '#6366f1',
-          purple: '#a855f7',
-          cyan: '#22d3ee',
-        },
+        paper: '#f6f5f1',
+        surface: '#ffffff',
+        sunken: '#efeee8',
+        ink: { DEFAULT: '#111418', 2: '#3b4049', 3: '#6a6f78', 4: '#9a9ea6' },
+        line: { DEFAULT: '#e4e2db', strong: '#cfccc3' },
+        brand: { DEFAULT: '#2f5bea', ink: '#1f43bf', soft: '#e9efff' },
+        navy: '#14264a',
+        signal: '#f5b82e',
       },
+      borderRadius: { xl2: '1.25rem' },
       boxShadow: {
-        glow: '0 0 40px -10px rgba(99, 102, 241, 0.55)',
-        'glow-blue': '0 10px 40px -12px rgba(59, 130, 246, 0.6)',
+        card: '0 1px 2px rgb(17 20 24 / 0.04), 0 1px 1px rgb(17 20 24 / 0.03)',
+        lift: '0 1px 2px rgb(17 20 24 / 0.05), 0 12px 32px -12px rgb(17 20 24 / 0.18)',
       },
-      backgroundImage: {
-        'accent-gradient': 'linear-gradient(135deg, #3b82f6 0%, #6366f1 45%, #a855f7 100%)',
-      },
-      keyframes: {
-        'fade-up': {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        'fade-in': {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-12px)' },
-        },
-        'pulse-glow': {
-          '0%, 100%': { opacity: '0.45' },
-          '50%': { opacity: '0.85' },
-        },
-      },
-      animation: {
-        'fade-up': 'fade-up 0.7s ease-out both',
-        'fade-in': 'fade-in 0.8s ease-out both',
-        float: 'float 6s ease-in-out infinite',
-        'pulse-glow': 'pulse-glow 5s ease-in-out infinite',
-      },
+      maxWidth: { page: '76rem' },
     },
   },
   plugins: [],

@@ -14,17 +14,14 @@ export const metadata = {
 
 export default function SubmitPage() {
   return (
-    <div className="min-h-screen pt-20 sm:pt-24">
-      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 transition hover:text-indigo-300"
-        >
-          <ArrowLeft className="h-4 w-4" /> হোমে ফিরে যান
+    <div className="min-h-screen">
+      <div className="page flex flex-wrap items-center justify-between gap-3 pt-8">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-ink-3 transition-colors hover:text-ink">
+          <ArrowLeft className="h-4 w-4" /> হোমে ফিরে যাও
         </Link>
-        <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-bold text-fuchsia-200">
-          <Clock3 className="h-3.5 w-3.5" /> {dates.submissionDeadlineLabel}
-        </div>
+        <span className="chip">
+          <Clock3 className="h-3.5 w-3.5" /> শেষ সময় {dates.submissionDeadlineLabel}
+        </span>
       </div>
       <SubmissionForm />
     </div>

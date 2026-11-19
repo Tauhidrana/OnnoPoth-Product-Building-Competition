@@ -152,17 +152,17 @@ export default function AdminPage() {
     return (
       <div className="flex min-h-screen items-center justify-center px-4 py-24">
         <div className="glass w-full max-w-md p-8">
-          <div className="mb-6 inline-grid h-12 w-12 place-items-center rounded-2xl bg-accent-gradient shadow-glow">
-            <ShieldCheck className="h-6 w-6 text-white" />
+          <div className="mb-6 inline-grid h-12 w-12 place-items-center rounded-2xl bg-brand">
+            <ShieldCheck className="h-6 w-6 text-ink" />
           </div>
-          <h1 className="text-2xl font-extrabold text-white">Admin Login</h1>
-          <p className="mt-2 text-sm text-slate-400">আইডিয়া পর্যালোচনার জন্য সাইন ইন করুন।</p>
+          <h1 className="text-2xl font-bold text-ink">Admin Login</h1>
+          <p className="mt-2 text-sm text-ink-3">আইডিয়া পর্যালোচনার জন্য সাইন ইন করুন।</p>
 
           <form onSubmit={handleLogin} className="mt-8 space-y-5">
             <div>
               <label className="field-label" htmlFor="admin-email">ইমেইল</label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
                 <input
                   id="admin-email"
                   type="email"
@@ -195,8 +195,8 @@ export default function AdminPage() {
               {loggingIn ? <Loader2 className="h-5 w-5 animate-spin" /> : 'লগইন করুন'}
             </button>
           </form>
-          <p className="mt-6 text-center text-xs text-slate-500">
-            <Link href="/" className="hover:text-indigo-300">← হোমে ফিরে যান</Link>
+          <p className="mt-6 text-center text-xs text-ink-3">
+            <Link href="/" className="hover:text-brand-ink">← হোমে ফিরে যান</Link>
           </p>
         </div>
       </div>
@@ -214,8 +214,8 @@ export default function AdminPage() {
         />
 
         <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-slate-400">
-            মোট <span className="font-bold text-white">{ideas.length}</span> টি অপেক্ষমাণ আইডিয়া
+          <p className="text-sm text-ink-3">
+            মোট <span className="font-bold text-ink">{ideas.length}</span> টি অপেক্ষমাণ আইডিয়া
           </p>
           <div className="flex flex-wrap gap-2">
             <button onClick={sendReminders} disabled={reminding} className="btn-secondary !px-4 !py-2 !text-xs">
@@ -232,24 +232,24 @@ export default function AdminPage() {
         </div>
 
         {toast && (
-          <div className="mt-5 rounded-2xl border border-indigo-400/30 bg-indigo-500/10 p-4 text-sm text-indigo-100">
+          <div className="mt-5 rounded-2xl border border-brand/30 bg-brand-soft p-4 text-sm text-brand">
             {toast}
           </div>
         )}
         {loadError && (
-          <div className="mt-5 flex items-center gap-2 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+          <div className="mt-5 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <AlertCircle className="h-4 w-4" /> {loadError}
           </div>
         )}
 
         {authed === null || loading ? (
           <div className="mt-12 flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-300" />
+            <Loader2 className="h-8 w-8 animate-spin text-brand" />
           </div>
         ) : ideas.length === 0 ? (
           <div className="glass mt-12 p-12 text-center">
-            <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-300" />
-            <p className="mt-4 font-bold text-white">কোনো অপেক্ষমাণ আইডিয়া নেই।</p>
+            <CheckCircle2 className="mx-auto h-10 w-10 text-green-700" />
+            <p className="mt-4 font-bold text-ink">কোনো অপেক্ষমাণ আইডিয়া নেই।</p>
           </div>
         ) : (
           <div className="mt-8 space-y-5">
@@ -257,15 +257,15 @@ export default function AdminPage() {
               <div key={item.uid} className="glass p-6 sm:p-8">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-300">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand">
                       {item.registrationType === 'team' ? `Team · ${item.teamName || '—'}` : 'Solo'}
                     </p>
-                    <h3 className="mt-1 text-xl font-extrabold text-white">{item.productName}</h3>
-                    <p className="mt-1 text-sm text-slate-400">
+                    <h3 className="mt-1 text-xl font-bold text-ink">{item.productName}</h3>
+                    <p className="mt-1 text-sm text-ink-3">
                       {item.name} · {item.institution} · {item.className}
                     </p>
                   </div>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-ink-3">
                     {item.submittedAt ? new Date(item.submittedAt).toLocaleString('bn-BD') : ''}
                   </span>
                 </div>
@@ -279,9 +279,9 @@ export default function AdminPage() {
                     ['ব্যবহারকারী', item.users],
                     ['ফিচার', item.features],
                   ].map(([label, value]) => (
-                    <div key={label} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
-                      <p className="mt-1 break-words text-slate-200">{value || '—'}</p>
+                    <div key={label} className="rounded-xl border border-line bg-paper p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-ink-3">{label}</p>
+                      <p className="mt-1 break-words text-ink">{value || '—'}</p>
                     </div>
                   ))}
                 </div>
@@ -302,7 +302,7 @@ export default function AdminPage() {
                   <button
                     onClick={() => decide(item, 'decline')}
                     disabled={!!busy}
-                    className="btn-secondary !px-5 !py-2.5 !text-xs !border-rose-400/30 !text-rose-200"
+                    className="btn-secondary !px-5 !py-2.5 !text-xs !border-red-200 !text-red-700"
                   >
                     {busy === `${item.uid}-decline` ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -319,8 +319,8 @@ export default function AdminPage() {
 
         {/* Publish final results (up to 10 places) */}
         <div className="glass mt-10 p-7 sm:p-9">
-          <h3 className="text-lg font-bold text-white">ফলাফল প্রকাশ করুন (সর্বোচ্চ ১০ প্লেস)</h3>
-          <p className="mt-2 text-sm text-slate-400">
+          <h3 className="text-lg font-bold text-ink">ফলাফল প্রকাশ করুন (সর্বোচ্চ ১০ প্লেস)</h3>
+          <p className="mt-2 text-sm text-ink-3">
             নিচের ফরম্যাটে JSON পেস্ট করুন। প্রকাশের সাথে সাথেই winner-কে ফলাফল ইমেইল যাবে।
           </p>
           <textarea
