@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Crown, Medal, Award, Clock3, Trophy, BarChart3 } from 'lucide-react';
 import SectionHeading from '@/components/SectionHeading';
 import { results as configResults, judgingCriteria, prizes, dates } from '@/lib/config';
-import { getRecords } from '@/lib/gmail-store';
+import { getResults } from '@/lib/repo';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,10 +16,11 @@ const ICONS = { gold: Crown, silver: Medal, bronze: Award };
 export default async function ResultsPage() {
   let results = configResults || [];
   try {
-    const stored = await getRecords();
-    if (stored.results?.length) results = stored.results[0].winners || [];
-  } catch {
-    // Fall back to config values if Gmail is unreachable.
+    const stored = await getResults();
+    if (stored.length) results = stored;
+  } catch (error) {
+    // Fall back to config values if the database is unreachable.
+    console.error('Results load failed:', error.message);
   }
 
   return (
@@ -44,10 +45,9 @@ export default async function ResultsPage() {
         ) : (
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {results.map((winner, i) => {
-              const theme = prizes[i]?.theme || 'gold';
-              const Icon = ICONS[theme];
+              const Icon = ICONS[prizes[i]?.theme] || Award;
               return (
-                <div key={winner.place} className="glass p-8 text-center">
+                <div key={winner.rank ?? winner.place} className="glass p-8 text-center">
                   <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-brand">
                     <Icon className="h-7 w-7 text-ink" />
                   </div>

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BadgeCheck, Users, ArrowRight } from 'lucide-react';
 import SectionHeading from '@/components/SectionHeading';
-import { getRecords, decisionFor } from '@/lib/gmail-store';
+import { listApproved } from '@/lib/repo';
 import { dates } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
@@ -15,10 +15,7 @@ export default async function ConfirmedPage() {
   let error = '';
 
   try {
-    const { registrations, approvals } = await getRecords();
-    approved = registrations
-      .map((r) => ({ ...r, decision: decisionFor(approvals, r.email)?.decision || null }))
-      .filter((r) => r.decision === 'approve');
+    approved = await listApproved();
   } catch {
     error = 'তালিকা লোড করা যায়নি। কিছুক্ষণ পর আবার দেখুন।';
   }
@@ -44,12 +41,12 @@ export default async function ConfirmedPage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {approved.map((person) => (
-                <div key={person.uid} className="glass flex items-start gap-4 p-6">
+                <div key={person.id} className="glass flex items-start gap-4 p-6">
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-green-50 text-green-700">
                     <BadgeCheck className="h-5 w-5" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-ink">{person.name}</h3>
+                    <h3 className="font-bold text-ink">{person.fullName}</h3>
                     <p className="mt-0.5 text-sm text-brand">
                       {person.productName}
                       {person.teamName ? ` · ${person.teamName}` : ''}

@@ -1,369 +1,265 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import {
- AlertCircle,
- ArrowRight,
- CheckCircle2,
- Clock3,
- ExternalLink,
- GitBranch,
- Loader2,
- Lock,
- Mail,
- Sparkles,
- User,
-} from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, ExternalLink, Info, Loader2, Lock, Pencil } from 'lucide-react';
 import SectionHeading from './SectionHeading';
-import { dates, isSubmissionOpen, event, buildPlatforms } from '@/lib/config';
+import { dates, isSubmissionOpen, contacts } from '@/lib/config';
+import { validateSubmission, normaliseUrl, isVercelUrl, SUBMISSION_LIMITS } from '@/lib/validation';
 
-const EMPTY = {
-  name: '',
-  email: '',
-  productName: '',
-  platform: 'github',
-  githubUrl: '',
-  liveUrl: '',
-  demoUrl: '',
-  aiTools: '',
-  timeSpent: '',
-  readme: false,
-  agree: false,
-  website: '',
-};
+const BN = '০১২৩৪৫৬৭৮৯';
+const bn = (n) => String(n).replace(/\d/g, (d) => BN[d]);
+const when = (v) =>
+  new Date(v).toLocaleString('bn-BD', { timeZone: 'Asia/Dhaka', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const URL_RE = /^https?:\/\/[^\s]+$/i;
-const GITHUB_RE = /^https?:\/\/(www\.)?github\.com\/[^\s/]+\/[^\s/]+/i;
-
-function ErrorText({ message }) {
+function FieldError({ id, message }) {
   if (!message) return null;
   return (
-    <p className="field-error" role="alert">
-      <AlertCircle className="h-3.5 w-3.5" /> {message}
+    <p id={id} className="field-error">
+      <AlertCircle className="h-4 w-4 shrink-0" /> {message}
     </p>
   );
 }
 
+/**
+ * Final submission, opened from the personal link in the approval email:
+ * the live project URL (required) and a short description (optional).
+ */
 export default function SubmissionForm() {
-  const [form, setForm] = useState(EMPTY);
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState(null);
-  const [message, setMessage] = useState('');
-  const [open, setOpen] = useState(null);
-  const [access, setAccess] = useState(null); // null = checking approval
+  const [access, setAccess] = useState(null); // null = checking the link
   const [token, setToken] = useState('');
+  const [open, setOpen] = useState(true);
+  const [form, setForm] = useState({ liveUrl: '', description: '' });
+  const [touched, setTouched] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [serverErrors, setServerErrors] = useState({});
+  const [notice, setNotice] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(null);
+  const doneRef = useRef(null);
+  const urlRef = useRef(null);
 
   useEffect(() => {
     setOpen(isSubmissionOpen());
     const t = new URLSearchParams(window.location.search).get('token') || '';
     setToken(t);
-    if (!t) {
-      setAccess({ allowed: false });
-      return;
-    }
+    if (!t) return setAccess({ allowed: false });
     fetch(`/api/submit/access?token=${encodeURIComponent(t)}`)
       .then((res) => res.json().catch(() => ({ allowed: false })))
-      .then((data) => setAccess(data.allowed ? data : { allowed: false }))
-      .catch(() => setAccess({ allowed: false }));
+      .then((data) => {
+        if (!data.allowed) return setAccess({ allowed: false, reason: data.error ? 'error' : 'invalid' });
+        setAccess(data);
+        if (data.submitted) setForm({ liveUrl: data.submitted.liveUrl || '', description: data.submitted.description || '' });
+      })
+      .catch(() => setAccess({ allowed: false, reason: 'error' }));
   }, []);
 
-  const set = (name, value) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  const { errors: liveErrors, data: clean } = validateSubmission(form);
+  const errorFor = (k) => serverErrors[k] || ((submitted || touched[k]) && liveErrors[k]) || '';
+  const update = (k, v) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    setServerErrors((e) => ({ ...e, [k]: undefined }));
+    setNotice('');
   };
-
-  function validate() {
-    const e = {};
-    const needsGithub = form.platform === 'github';
-    if (!form.name.trim()) e.name = 'নাম বা টিমের নাম লিখুন।';
-    if (!EMAIL_RE.test(form.email.trim())) e.email = 'সঠিক ইমেইল ঠিকানা দিন।';
-    if (!form.productName.trim()) e.productName = 'প্রোডাক্টের নাম লিখুন।';
-    if (needsGithub && !GITHUB_RE.test(form.githubUrl.trim())) {
-      e.githubUrl = 'সঠিক GitHub repository লিংক দিন।';
-    }
-    if (!URL_RE.test(form.liveUrl.trim())) e.liveUrl = 'সঠিক লাইভ লিংক দিন (Vercel / Lovable / v0)।';
-    if (form.demoUrl.trim() && !URL_RE.test(form.demoUrl.trim())) e.demoUrl = 'সঠিক ডেমো ভিডিও লিংক দিন।';
-    if (!form.aiTools.trim()) e.aiTools = 'কোন AI টুল কীভাবে ব্যবহার করেছেন তা লিখুন।';
-    if (needsGithub && !form.readme) e.readme = 'README যোগ করার নিশ্চিতকরণ আবশ্যক।';
-    if (!form.agree) e.agree = 'নিয়ম মেনে জমা দেওয়ার নিশ্চিতকরণ আবশ্যক।';
-    return e;
-  }
+  const urlLooksOk = !liveErrors.liveUrl && form.liveUrl.trim();
+  const descLength = [...form.description.trim()].length;
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (submitting || open === false) return;
-    const found = validate();
-    setErrors(found);
-    if (Object.keys(found).length) {
-      document.getElementById('submit-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
+    if (submitting || !open) return;
+    setSubmitted(true);
+    setNotice('');
+    if (Object.keys(liveErrors).length) return urlRef.current?.focus();
+
     setSubmitting(true);
-    setStatus(null);
-    setMessage('');
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, token }),
+        body: JSON.stringify({ token, ...clean }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        setStatus('success');
-        setForm(EMPTY);
-      } else {
-        setStatus('error');
-        setMessage(data.error || 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।');
-        if (data.fields) setErrors(data.fields);
+        setDone({ ...clean, updated: data.updated, emailed: data.emailed });
+        setAccess((a) => ({ ...a, submitted: { at: new Date().toISOString(), ...clean } }));
+        requestAnimationFrame(() => {
+          doneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          doneRef.current?.focus({ preventScroll: true });
+        });
+        return;
       }
+      if (data.fields) setServerErrors(data.fields);
+      if (res.status === 403 && /সময় শেষ/.test(data.error || '')) setOpen(false);
+      else if (res.status === 403) setAccess({ allowed: false, reason: 'invalid' });
+      else if (res.status === 429) setNotice('অল্প সময়ে অনেকবার চেষ্টা হয়েছে। কয়েক মিনিট পর আবার জমা দাও।');
+      else if (!data.fields) setNotice('জমা দেওয়া যায়নি — আমাদের দিক থেকে একটা সমস্যা হয়েছে। একটু পর আবার চেষ্টা করো; ডেডলাইন কাছে হলে এখনই আয়োজকদের জানাও।');
     } catch {
-      setStatus('error');
-      setMessage('ইন্টারনেট সংযোগ যাচাই করে আবার চেষ্টা করুন।');
+      setNotice('ইন্টারনেট সংযোগ নেই। সংযোগ ঠিক করে আবার “জমা দাও” চাপো — লেখা মুছে যায়নি।');
     } finally {
       setSubmitting(false);
     }
   }
 
-  const closed = open === false;
-
   return (
-    <section id="submit-form" className="relative py-14 sm:py-20">
-      <div className="page relative">
+    <section id="submit-form" className="py-12 sm:py-16">
+      <div className="page">
         <SectionHeading
-          index="01"
-          eyebrow="Final submission"
-          title={<>প্রোডাক্ট <span className="">জমা দিন</span></>}
-          subtitle={`সব লিংক যাচাই করে ${dates.submissionDeadlineLabel}-এর আগে জমা দিন।`}
+          eyebrow="ফাইনাল সাবমিশন"
+          title="লাইভ প্রোজেক্ট জমা দাও"
+          subtitle={`ডিপ্লয় করা প্রোজেক্টের লিংক আর চাইলে ছোট একটা বিবরণ — ${dates.submissionDeadlineLabel}-এর আগে।`}
         />
 
-        {access === null ? (
-          <div className="mt-16 flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-brand" />
-          </div>
-        ) : !access.allowed ? (
-          <div className="glass mx-auto mt-14 max-w-2xl p-8 text-center sm:p-12">
-            <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-amber-800">
-              <Lock className="h-7 w-7" />
+        <div className="mt-10 max-w-2xl">
+          {access === null ? (
+            <div className="card flex items-center justify-center gap-3 p-12 text-ink-3">
+              <Loader2 className="h-5 w-5 animate-spin" /> লিংক যাচাই করা হচ্ছে…
             </div>
-            <h3 className="text-2xl font-bold text-ink">আগে আইডিয়া অ্যাপ্রুভ করুন</h3>
-            <p className="mt-4 text-sm leading-relaxed text-ink-3">
-              ফাইনাল প্রোডাক্ট জমা দেওয়ার আগে আপনার আইডিয়া আয়োজক কমিটি দ্বারা যাচাই হতে হবে।
-              আপনার রেজিস্ট্রেশন ইমেইলে অ্যাপ্রুভাল লিংক পাঠানো হবে — সেই লিংক দিয়েই এই ফর্ম খুলবে।
-            </p>
-            <p className="mt-4 rounded-2xl border border-line bg-paper px-5 py-4 text-sm font-semibold text-ink-2">
-              এখনো অ্যাপ্রুভ হয়নি? পরবর্তী রাউন্ডে আবার চেষ্টা করুন
-            </p>
-            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <a href="/#register" className="btn-primary">রেজিস্ট্রেশন দেখুন</a>
-              <Link href="/rulebook" className="btn-secondary">রুলবুক পড়ুন</Link>
-            </div>
-          </div>
-        ) : (
-        <div className="mt-14 grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-          <aside className="space-y-4 lg:sticky lg:top-28">
-            <div className="glass relative overflow-hidden p-7">
-              <div className="absolute inset-x-0 top-0 h-1 bg-brand" />
-              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
-                <Clock3 className="h-3.5 w-3.5" /> Deadline
+          ) : !access.allowed ? (
+            <Locked reason={access.reason} hasToken={Boolean(token)} />
+          ) : done ? (
+            <div ref={doneRef} tabIndex={-1} role="status" className="card rise scroll-mt-24 p-6 outline-none sm:p-8">
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-green-50 text-green-700"><CheckCircle2 className="h-6 w-6" /></span>
+              <h3 className="mt-4 text-2xl font-semibold">{done.updated ? 'জমা আপডেট হয়েছে' : 'জমা হয়েছে!'}</h3>
+              <p className="mt-2 text-[15px] text-ink-2">
+                {done.emailed ? <>কনফার্মেশন ইমেইল গেছে <strong className="break-all text-ink">{access.email}</strong>-এ।</> : <>তোমার জমা আমরা পেয়েছি। কনফার্মেশন ইমেইল একটু দেরিতে আসতে পারে।</>}
               </p>
-              <p className="mt-3 text-2xl font-bold text-ink">২৭ নভেম্বর</p>
-              <p className="text-sm font-semibold text-brand">রাত ১০টা (UTC+6)</p>
-              <div className="my-6 h-px bg-sunken" />
-              <p className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-3">
-                যা যা লাগবে
-              </p>
-              <ul className="space-y-3 text-sm text-ink-2">
-                {[
-                  ...(form.platform === 'github' ? ['GitHub repo লিংক (Public)', 'README ফাইল'] : []),
-                  'লাইভ লিংক (Vercel / Lovable / v0)',
-                  'AI টুল ব্যবহারের বিবরণ',
-                  'ডেমো ভিডিও (ঐচ্ছিক)',
-                ].map((item, i) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-green-50 text-[10px] font-bold text-green-700">
-                      {i + 1}
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <Link
-              href="/rulebook"
-              target="_blank"
-              className="flex items-center justify-between rounded-2xl border border-line bg-paper px-6 py-4 text-sm font-bold text-ink transition hover:border-brand/40"
-            >
-              রুলবুক দেখুন <ExternalLink className="h-4 w-4 text-brand" />
-            </Link>
-          </aside>
-
-          <form onSubmit={handleSubmit} noValidate className="glass p-6 sm:p-9">
-            {closed && (
-              <div className="mb-7 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
-                <Lock className="h-5 w-5 shrink-0" /> জমা দেওয়ার সময় শেষ হয়ে গেছে।
+              <dl className="mt-6 space-y-3 rounded-xl bg-paper p-4 text-sm">
+                <div><dt className="text-ink-3">লাইভ লিংক</dt><dd><a href={done.liveUrl} target="_blank" rel="noopener noreferrer" className="link break-all">{done.liveUrl}</a></dd></div>
+                {done.description && <div><dt className="text-ink-3">বিবরণ</dt><dd className="whitespace-pre-wrap text-ink">{done.description}</dd></div>}
+              </dl>
+              <p className="mt-5 text-sm text-ink-3">ডেডলাইনের আগে এই পেজ থেকে যতবার খুশি আপডেট করতে পারবে। ফলাফল ২৮ নভেম্বর সন্ধ্যায়।</p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                {open && (
+                  <button type="button" onClick={() => setDone(null)} className="btn-secondary"><Pencil className="h-4 w-4" /> আপডেট করো</button>
+                )}
+                <Link href="/results" className="btn-secondary">ফলাফল পেজ</Link>
               </div>
-            )}
-
-            <div>
-              <p className="field-label">কী দিয়ে বানিয়েছেন? *</p>
-              <div className="grid grid-cols-3 gap-2">
-                {buildPlatforms.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => set('platform', p.id)}
-                    aria-pressed={form.platform === p.id}
-                    className={`rounded-xl border px-2 py-3 text-center text-[11px] font-bold transition sm:text-xs ${
-                      form.platform === p.id
-                        ? 'border-brand bg-brand-soft text-ink'
-                        : 'border-line bg-paper text-ink-3 hover:border-ink-4'
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-ink-3">
-                {buildPlatforms.find((p) => p.id === form.platform)?.hint}
-              </p>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate aria-label="লাইভ প্রোজেক্ট জমার ফর্ম" className="card overflow-hidden">
+              <div className="border-b border-line bg-paper px-6 py-4 sm:px-8">
+                <p className="text-xs text-ink-3">জমা দিচ্ছ</p>
+                <p className="mt-0.5 text-lg font-semibold text-ink">{access.productName}</p>
+                <p className="text-sm text-ink-3">{access.name}{access.leader && access.leader !== access.name ? ` · লিডার ${access.leader}` : ''} · {access.email}</p>
+              </div>
 
-            <div className="space-y-6">
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div>
-                  <label className="field-label" htmlFor="s-name">নাম / টিমের নাম *</label>
-                  <div className="relative">
-                    <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
-                    <input id="s-name" className="field-input !pl-11" placeholder="যেমন: Team Syntax Error" value={form.name} onChange={(e) => set('name', e.target.value)} />
+              <div className="space-y-6 p-6 sm:p-8">
+                {!open && (
+                  <div className="flex gap-3 rounded-xl border border-line bg-paper p-4 text-[15px] text-ink-2">
+                    <Lock className="mt-0.5 h-5 w-5 shrink-0" />
+                    <span>জমা দেওয়ার সময় শেষ ({dates.submissionDeadlineLabel})। {access.submitted ? 'নিচে তোমার শেষ জমা দেখা যাচ্ছে।' : 'এই প্রোজেক্টের কোনো জমা পাওয়া যায়নি।'}</span>
                   </div>
-                  <ErrorText message={errors.name} />
-                </div>
-                <div>
-                  <label className="field-label" htmlFor="s-email">ইমেইল *</label>
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
-                    <input id="s-email" type="email" className="field-input !pl-11" placeholder="you@example.com" value={form.email} onChange={(e) => set('email', e.target.value)} />
+                )}
+                {open && access.submitted && (
+                  <div className="flex gap-3 rounded-xl bg-brand-soft/60 p-4 text-[15px] text-ink-2">
+                    <Info className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+                    <span>{when(access.submitted.at)}-এ জমা দিয়েছ। নতুন লিংক বা বিবরণ দিয়ে জমা দিলে আগেরটি বদলে যাবে।</span>
                   </div>
-                  <ErrorText message={errors.email} />
-                </div>
-              </div>
+                )}
+                {notice && (
+                  <div role="alert" className="flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-[15px] text-red-800">
+                    <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /> {notice}
+                  </div>
+                )}
 
-              <div>
-                <label className="field-label" htmlFor="s-product">প্রোডাক্টের নাম *</label>
-                <div className="relative">
-                  <Sparkles className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
-                  <input id="s-product" className="field-input !pl-11" placeholder="প্রোডাক্টের নাম" value={form.productName} onChange={(e) => set('productName', e.target.value)} />
-                </div>
-                <ErrorText message={errors.productName} />
-              </div>
-
-              <div className={`grid gap-6 ${form.platform === 'github' ? 'sm:grid-cols-2' : ''}`}>
-                {form.platform === 'github' && (
-                  <div>
-                    <label className="field-label" htmlFor="s-github">GitHub repository *</label>
-                    <div className="relative">
-                      <GitBranch className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
-                      <input id="s-github" className="field-input !pl-11" placeholder="github.com/user/repo" value={form.githubUrl} onChange={(e) => set('githubUrl', e.target.value)} />
+                <div>
+                  <label htmlFor="liveUrl" className="field-label">লাইভ প্রোজেক্টের লিংক</label>
+                  <input
+                    ref={urlRef}
+                    id="liveUrl"
+                    name="liveUrl"
+                    type="url"
+                    inputMode="url"
+                    autoComplete="url"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    placeholder="https://your-app.vercel.app"
+                    className="field-input"
+                    disabled={!open}
+                    value={form.liveUrl}
+                    onChange={(e) => update('liveUrl', e.target.value)}
+                    onBlur={() => {
+                      setTouched((t) => ({ ...t, liveUrl: true }));
+                      const n = normaliseUrl(form.liveUrl);
+                      if (n !== form.liveUrl) update('liveUrl', n);
+                    }}
+                    aria-invalid={errorFor('liveUrl') ? true : undefined}
+                    aria-describedby={errorFor('liveUrl') ? 'liveUrl-error' : 'liveUrl-hint'}
+                  />
+                  {errorFor('liveUrl') ? (
+                    <FieldError id="liveUrl-error" message={errorFor('liveUrl')} />
+                  ) : (
+                    <div id="liveUrl-hint" className="field-hint flex flex-wrap items-center gap-x-3 gap-y-1">
+                      {urlLooksOk && !isVercelUrl(clean.liveUrl) ? (
+                        <span className="text-amber-800">Vercel-এর লিংক নয় — অন্য কোথাও হোস্ট করা হলেও চলবে, শুধু নিশ্চিত হও সবাই খুলতে পারে।</span>
+                      ) : (
+                        <span>Vercel-এ প্রোজেক্টের “Visit” চাপলে যে লিংক খোলে, সেটিই।</span>
+                      )}
+                      {urlLooksOk && (
+                        <a href={clean.liveUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-brand hover:text-brand-ink">
+                          খুলে দেখো <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      )}
                     </div>
-                    <ErrorText message={errors.githubUrl} />
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <label htmlFor="description" className="field-label">ছোট বিবরণ <span className="font-normal text-ink-3">(ঐচ্ছিক)</span></label>
+                    <span className={`text-xs tabular-nums ${descLength > SUBMISSION_LIMITS.description ? 'font-semibold text-red-600' : 'text-ink-3'}`}>
+                      {bn(descLength)}/{bn(SUBMISSION_LIMITS.description)}
+                    </span>
                   </div>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={4}
+                    className="field-input resize-y"
+                    disabled={!open}
+                    placeholder="এক-দুই লাইনে: প্রোডাক্টটি কী করে, কীভাবে ব্যবহার করতে হয়। লগইন লাগলে একটা টেস্ট অ্যাকাউন্ট দিয়ে দাও।"
+                    value={form.description}
+                    onChange={(e) => update('description', e.target.value)}
+                    onBlur={() => setTouched((t) => ({ ...t, description: true }))}
+                    aria-invalid={errorFor('description') ? true : undefined}
+                    aria-describedby={errorFor('description') ? 'description-error' : undefined}
+                  />
+                  <FieldError id="description-error" message={errorFor('description')} />
+                </div>
+
+                {open && (
+                  <button type="submit" disabled={submitting} className="btn-brand w-full !py-4 !text-base">
+                    {submitting ? <><Loader2 className="h-5 w-5 animate-spin" /> জমা হচ্ছে…</> : <>{access.submitted ? 'আপডেট করো' : 'জমা দাও'} <ArrowRight className="h-5 w-5" /></>}
+                  </button>
                 )}
-                <div>
-                  <label className="field-label" htmlFor="s-live">লাইভ লিংক * (Vercel / Lovable / v0)</label>
-                  <div className="relative">
-                    <ExternalLink className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
-                    <input id="s-live" className="field-input !pl-11" placeholder="https://your-app.vercel.app" value={form.liveUrl} onChange={(e) => set('liveUrl', e.target.value)} />
-                  </div>
-                  <ErrorText message={errors.liveUrl} />
-                </div>
               </div>
-
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div>
-                  <label className="field-label" htmlFor="s-demo">ডেমো ভিডিও (ঐচ্ছিক)</label>
-                  <input id="s-demo" className="field-input" placeholder="YouTube / Drive link" value={form.demoUrl} onChange={(e) => set('demoUrl', e.target.value)} />
-                  <ErrorText message={errors.demoUrl} />
-                </div>
-                <div>
-                  <label className="field-label" htmlFor="s-time">কত সময় লেগেছে? (ঐচ্ছিক)</label>
-                  <input id="s-time" className="field-input" placeholder="যেমন: প্রায় ৯ ঘণ্টা" value={form.timeSpent} onChange={(e) => set('timeSpent', e.target.value)} />
-                </div>
-              </div>
-
-              <div>
-                <label className="field-label" htmlFor="s-ai">কোন AI টুল কীভাবে ব্যবহার করেছেন? *</label>
-                <textarea
-                  id="s-ai"
-                  rows={4}
-                  className="field-input resize-y"
-                  placeholder="যেমন: Cursor দিয়ে কোড, ChatGPT দিয়ে ডিবাগিং, Claude দিয়ে README…"
-                  value={form.aiTools}
-                  onChange={(e) => set('aiTools', e.target.value)}
-                />
-                <ErrorText message={errors.aiTools} />
-              </div>
-
-              <div className="space-y-3">
-                {form.platform === 'github' && (
-                  <>
-                    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-paper p-4 text-sm text-ink-2">
-                      <input type="checkbox" checked={form.readme} onChange={(e) => set('readme', e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-brand" />
-                      আমি GitHub রিপোজিটরিতে README ফাইল যোগ করেছি *
-                    </label>
-                    <ErrorText message={errors.readme} />
-                  </>
-                )}
-                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-paper p-4 text-sm text-ink-2">
-                  <input type="checkbox" checked={form.agree} onChange={(e) => set('agree', e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-brand" />
-                  আমি সব নিয়ম মেনে প্রোডাক্ট জমা দিচ্ছি *
-                </label>
-                <ErrorText message={errors.agree} />
-              </div>
-
-              {/* honeypot */}
-              <div className="honeypot" aria-hidden="true">
-                <label htmlFor="s-website">Leave empty</label>
-                <input id="s-website" name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => set('website', e.target.value)} />
-              </div>
-            </div>
-
-            <div className="mt-9">
-              <button type="submit" disabled={submitting || closed} className="btn-primary w-full !py-4 text-base">
-                {closed ? (
-                  <>Submission Closed</>
-                ) : submitting ? (
-                  <><Loader2 className="h-5 w-5 animate-spin" /> পাঠানো হচ্ছে…</>
-                ) : (
-                  <>জমা দিন <ArrowRight className="h-5 w-5" /></>
-                )}
-              </button>
-              <p className="mt-3 text-center text-xs text-ink-3">
-                {event.organizer} আয়োজক কমিটি · ২৮ নভেম্বর সন্ধ্যায় ফলাফল
-              </p>
-            </div>
-
-            {status === 'success' && (
-              <div className="mt-7 flex items-start gap-3 rounded-2xl border border-green-200 bg-green-50 p-5 text-sm text-green-700" role="status">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
-                <div>
-                  <p className="font-bold">জমা দেওয়া সফল হয়েছে</p>
-                  <p className="mt-1 leading-relaxed">আপনার প্রোডাক্ট আমাদের কাছে পৌঁছে গেছে। ২৮ নভেম্বর সন্ধ্যায় ফলাফল ঘোষণা করা হবে। কনফার্মেশন ইমেইল চেক করুন।</p>
-                </div>
-              </div>
-            )}
-            {status === 'error' && (
-              <div className="mt-7 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700" role="alert">
-                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-                <p>{message}</p>
-              </div>
-            )}
-          </form>
+            </form>
+          )}
         </div>
-        )}
       </div>
     </section>
+  );
+}
+
+function Locked({ reason, hasToken }) {
+  const contact = contacts[0];
+  return (
+    <div className="card p-8 text-center sm:p-10">
+      <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-sunken text-ink-2"><Lock className="h-5 w-5" /></span>
+      <h3 className="mt-4 text-xl font-semibold">
+        {reason === 'error' ? 'লিংক যাচাই করা যায়নি' : hasToken ? 'এই লিংকটি কাজ করছে না' : 'অ্যাপ্রুভাল ইমেইলের লিংক লাগবে'}
+      </h3>
+      <p className="mx-auto mt-2 max-w-md text-[15px] leading-relaxed text-ink-2">
+        {reason === 'error'
+          ? 'ইন্টারনেট সংযোগ দেখে পেজটি আবার খোলো।'
+          : hasToken
+            ? 'লিংকটি অসম্পূর্ণ, মেয়াদ শেষ, অথবা তোমার অ্যাপ্রুভাল বাতিল হয়েছে। ইমেইল থেকে পুরো লিংকটি আবার খোলো, না হলে আয়োজকদের জানাও।'
+            : 'আইডিয়া অ্যাপ্রুভ হলে তোমার ইমেইলে একটি ব্যক্তিগত লিংক যাবে — সেটি খুললেই এখানে লাইভ প্রোজেক্ট জমা দিতে পারবে।'}
+      </p>
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        <Link href="/status" className="btn-primary">স্ট্যাটাস দেখো <ArrowRight className="h-4 w-4" /></Link>
+        {contact && <a href={contact.link} target="_blank" rel="noopener noreferrer" className="btn-secondary">আয়োজকদের জানাও</a>}
+      </div>
+    </div>
   );
 }
