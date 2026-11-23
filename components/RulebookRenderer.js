@@ -1,53 +1,54 @@
+import { ChevronDown } from 'lucide-react';
 import { submissionLink } from '@/lib/config';
+import HeadingAnchor from './rulebook/HeadingAnchor';
+import { navTitle } from './rulebook/nav';
 
 /**
- * Renders one typed content block. Blocks are defined in lib/rulebook.js.
- * Keeping the renderer generic means the rulebook content stays in one file.
+ * Renders the rulebook from the typed blocks in lib/rulebook.js, docs-style.
+ * Sub-heading ids match subHeadings() in components/rulebook/nav.js.
  */
-function replaceTokens(text) {
-  return String(text).replaceAll('{{SUBMISSION_LINK}}', submissionLink);
-}
+const text = (s) => String(s).replaceAll('{{SUBMISSION_LINK}}', submissionLink);
+const BN = '০১২৩৪৫৬৭৮৯';
+const bn = (n) => String(n).replace(/\d/g, (d) => BN[d]);
 
-export function renderBlock(block, key) {
+export function renderBlock(block, key, section) {
   switch (block.type) {
     case 'p':
-      return (
-        <p key={key} className="mb-4 text-[15px] leading-[1.9] text-ink-2 last:mb-0">
-          {replaceTokens(block.text)}
-        </p>
-      );
+      return <p key={key} className="text-[16px] leading-[1.85] text-ink-2">{text(block.text)}</p>;
 
     case 'list':
       return (
-        <ul key={key} className="mb-4 list-disc space-y-2 pl-6 text-[15px] leading-[1.9] text-ink-2 marker:text-ink-3 last:mb-0">
+        <ul key={key} className="space-y-2.5">
           {block.items.map((item, i) => (
-            <li key={i}>{replaceTokens(item)}</li>
+            <li key={i} className="relative pl-6 text-[16px] leading-[1.8] text-ink-2">
+              <span aria-hidden className="absolute left-1.5 top-[0.8em] h-1.5 w-1.5 rounded-full bg-ink-4" />
+              {text(item)}
+            </li>
           ))}
         </ul>
       );
 
     case 'numbered':
       return (
-        <ol key={key} className="mb-4 list-decimal space-y-3 pl-6 text-[15px] leading-[1.9] text-ink-2 marker:font-bold marker:text-ink-3 last:mb-0">
+        <ol key={key} className="space-y-3">
           {block.items.map((item, i) => (
-            <li key={i}>{replaceTokens(item)}</li>
+            <li key={i} className="flex gap-3.5 text-[16px] leading-[1.8] text-ink-2">
+              <span className="mt-[3px] grid h-6 w-6 shrink-0 place-items-center rounded-full bg-sunken font-display text-[13px] font-semibold text-ink">{bn(i + 1)}</span>
+              <span className="min-w-0">{text(item)}</span>
+            </li>
           ))}
         </ol>
       );
 
     case 'table':
       return (
-        <div key={key} className="mb-5 overflow-x-auto rounded-xl border border-line">
-          <table className="w-full min-w-[440px] border-collapse text-left text-[15px]">
-            <tbody>
+        <div key={key} className="overflow-x-auto rounded-xl border border-line bg-surface">
+          <table className="w-full border-collapse text-left text-[15px]">
+            <tbody className="divide-y divide-line">
               {block.rows.map(([label, value], i) => (
-                <tr key={i} className="border-b border-line last:border-0 odd:bg-paper">
-                  <th className="w-2/5 px-4 py-3 align-top font-bold text-ink">
-                    {replaceTokens(label)}
-                  </th>
-                  <td className="px-4 py-3 align-top leading-relaxed text-ink-2">
-                    {replaceTokens(value)}
-                  </td>
+                <tr key={i}>
+                  <th scope="row" className="px-4 py-3 align-top font-semibold text-ink sm:w-[38%]">{text(label)}</th>
+                  <td className="px-4 py-3 align-top leading-relaxed text-ink-2">{text(value)}</td>
                 </tr>
               ))}
             </tbody>
@@ -57,31 +58,33 @@ export function renderBlock(block, key) {
 
     case 'steps':
       return (
-        <div key={key} className="space-y-7">
+        <ol key={key} className="relative space-y-8 border-l border-line pl-8">
           {block.items.map((step, i) => (
-            <div key={i} className="rounded-2xl border border-line bg-paper p-5">
-              <h4 className="mb-3 flex items-center gap-2.5 text-base font-bold text-ink">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand text-xs font-bold text-ink">
-                  {i + 1}
-                </span>
-                {replaceTokens(step.title)}
-              </h4>
-              <div>{step.blocks.map((b, j) => renderBlock(b, `${key}-${i}-${j}`))}</div>
-            </div>
+            <li key={i} className="relative">
+              <span className="absolute -left-[45px] top-0 grid h-7 w-7 place-items-center rounded-full border border-line-strong bg-paper font-display text-[13px] font-semibold text-ink">
+                {bn(i + 1)}
+              </span>
+              <h3 id={`${section.id}-${i + 1}`} className="group scroll-mt-36 text-lg font-semibold leading-snug lg:scroll-mt-24">
+                {text(step.title).replace(/^ধাপ\s*[০-৯0-9]+:\s*/, '')}
+                <HeadingAnchor id={`${section.id}-${i + 1}`} label={step.title} />
+              </h3>
+              <div className="mt-3 space-y-4">{step.blocks.map((b, j) => renderBlock(b, `${key}-${i}-${j}`, section))}</div>
+            </li>
           ))}
-        </div>
+        </ol>
       );
 
     case 'qa':
       return (
-        <div key={key} className="space-y-4">
+        <div key={key} className="divide-y divide-line rounded-xl border border-line bg-surface">
           {block.items.map((qa, i) => (
-            <div key={i} className="rounded-xl border border-line bg-paper p-4">
-              <p className="font-bold text-ink">প্রশ্ন: {replaceTokens(qa.q)}</p>
-              <p className="mt-2 text-[15px] leading-[1.9] text-ink-2">
-                <span className="font-semibold text-brand">উত্তর:</span> {replaceTokens(qa.a)}
-              </p>
-            </div>
+            <details key={i} id={`${section.id}-q${i + 1}`} className="group scroll-mt-36 lg:scroll-mt-24" open>
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-5 py-4 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+                {text(qa.q)}
+                <ChevronDown className="mt-1 h-4 w-4 shrink-0 text-ink-3 transition-transform group-open:rotate-180" />
+              </summary>
+              <p className="faq-answer px-5 pb-5 text-[15px] leading-relaxed text-ink-2">{text(qa.a)}</p>
+            </details>
           ))}
         </div>
       );
@@ -91,19 +94,16 @@ export function renderBlock(block, key) {
   }
 }
 
-/**
- * Renders all rulebook sections. `section.id` is used for the anchor links in
- * the table of contents.
- */
 export default function RulebookRenderer({ sections }) {
   return (
     <>
-      {sections.map((section) => (
-        <section key={section.id} id={section.id} className="mb-12 scroll-mt-24 last:mb-0">
-          <h2 className="mb-5 border-b border-line pb-3 text-xl font-bold text-ink sm:text-2xl">
-            {section.title}
+      {sections.map((section, i) => (
+        <section key={section.id} id={section.id} className={`scroll-mt-36 lg:scroll-mt-20 ${i ? 'mt-14 border-t border-line pt-12' : ''}`}>
+          <h2 className="group text-[1.65rem] font-bold leading-tight sm:text-3xl">
+            {navTitle(section.title)}
+            <HeadingAnchor id={section.id} label={navTitle(section.title)} />
           </h2>
-          <div>{section.blocks.map((block, i) => renderBlock(block, `${section.id}-${i}`))}</div>
+          <div className="mt-6 space-y-5">{section.blocks.map((block, j) => renderBlock(block, `${section.id}-${j}`, section))}</div>
         </section>
       ))}
     </>

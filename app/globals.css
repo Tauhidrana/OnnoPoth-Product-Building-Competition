@@ -266,3 +266,28 @@ details[open] .faq-answer {
   .tilt-inner { transform: none !important; }
   .tilt-inner::after { display: none; }
 }
+
+/* Side drawer (rulebook contents on phones). */
+@keyframes drawer-in {
+  from { transform: translateX(-100%); }
+  to { transform: none; }
+}
+.drawer-in {
+  animation: drawer-in 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawer-in { animation: none; }
+}
+
+/* Mobile menu items arrive one after another. */
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.menu-in {
+  animation: menu-in 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 30ms + 40ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-in { animation: none; }
+}

@@ -3,6 +3,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ScrollReveal from '@/components/ScrollReveal';
+import HideOnAdmin from '@/components/HideOnAdmin';
 import { event, dates, socialLinks } from '@/lib/config';
 
 // Noto Sans Bengali for reading, Hind Siliguri for headings.
@@ -77,9 +78,13 @@ export default function RootLayout({ children }) {
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema) }} />
         <a href="#main" className="skip-link">মূল কনটেন্টে যান</a>
-        <Navbar />
+        <HideOnAdmin>
+          <Navbar />
+        </HideOnAdmin>
         <main id="main">{children}</main>
-        <Footer />
+        <HideOnAdmin>
+          <Footer />
+        </HideOnAdmin>
         <ScrollReveal />
       </body>
     </html>
