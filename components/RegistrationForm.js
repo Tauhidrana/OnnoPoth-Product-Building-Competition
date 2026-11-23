@@ -7,7 +7,7 @@ import {
   Plus, RotateCcw, Search, ShieldCheck, User, Users, X,
 } from 'lucide-react';
 import SectionHeading from './SectionHeading';
-import { dates, isRegistrationOpen, event } from '@/lib/config';
+import { dates, event } from '@/lib/config';
 import { validateRegistration, normalisePhone, normaliseGithub, suggestEmail, parseFeatures, LIMITS } from '@/lib/validation';
 import { eventIcs } from '@/lib/calendar';
 
@@ -123,15 +123,16 @@ export default function RegistrationForm() {
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState(null); // { tone, title, text, action }
   const [done, setDone] = useState(null); // successful registration summary
-  const [registrationOpen, setRegistrationOpen] = useState(null);
+  // Closed state comes ONLY from the server's 403 response — never from the
+  // visitor's device clock, which can be wrong and block a valid registration.
+  const [closed, setClosed] = useState(false);
   const [restored, setRestored] = useState(false);
   const [normalised, setNormalised] = useState({});
   const summaryRef = useRef(null);
   const successRef = useRef(null);
 
-  // Client-only: registration window and any saved draft (after mount → no hydration mismatch).
+  // Client-only: restore any saved draft (after mount → no hydration mismatch).
   useEffect(() => {
-    setRegistrationOpen(isRegistrationOpen());
     const draft = readDraft();
     if (draft && JSON.stringify(draft) !== JSON.stringify(EMPTY_FORM)) {
       setForm(draft);
@@ -227,7 +228,7 @@ export default function RegistrationForm() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (submitting || registrationOpen === false) return;
+    if (submitting) return;
     setSubmitted(true);
     setNotice(null);
 
@@ -261,7 +262,8 @@ export default function RegistrationForm() {
       } else if (res.status === 429) {
         setNotice({ tone: 'warn', title: 'একটু অপেক্ষা করো', text: 'অল্প সময়ে অনেকবার চেষ্টা হয়েছে। ১০ মিনিট পর আবার জমা দাও — তোমার লেখা এই ব্রাউজারে সেভ থাকবে।' });
       } else if (res.status === 403) {
-        setRegistrationOpen(false);
+        // Server-confirmed deadline passed (client clock is never trusted).
+        setClosed(true);
         return;
       } else if (!data.fields) {
         setNotice({ tone: 'error', title: 'জমা দেওয়া যায়নি', text: 'আমাদের দিক থেকে একটা সমস্যা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করো; সমস্যা থাকলে আয়োজকদের জানাও।' });
@@ -282,7 +284,6 @@ export default function RegistrationForm() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  const closed = registrationOpen === false;
   const groupValid = (keys) => keys.every((k) => !liveErrors[k]);
   const identityDone = groupValid(['registrationType', 'fullName', 'teamName', 'members', 'institution', 'className', 'whatsapp', 'email', 'github', 'productName']);
   const ideaDone = groupValid(['problem', 'users', 'features']);
