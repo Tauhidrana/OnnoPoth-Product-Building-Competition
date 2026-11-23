@@ -209,7 +209,7 @@ export default function RegistrationForm() {
                 <CalendarDays className="h-4 w-4" /> শেষ সময়
               </p>
               <p className="mt-2 font-display text-3xl font-semibold text-white">২৩ নভেম্বর</p>
-              <p className="text-white/80">রাত ১১:৫৯ (UTC+6)</p>
+              <p className="text-white/80">রাত ১২টা (UTC+6)</p>
               <ul className="mt-6 space-y-3 border-t border-white/15 pt-6 text-[15px] text-white/85">
                 {[
                   '২৫ নভেম্বর কনফার্মড তালিকা ঘোষণা',
